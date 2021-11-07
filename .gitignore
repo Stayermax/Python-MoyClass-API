@@ -133,3 +133,4 @@ dmypy.json
 .directory
 
 credentials.py
+openapi.json

@@ -4,6 +4,7 @@ import requests
 import time
 import pandas as pd
 import datetime
+import json
 
 def datetime_parser(DT: str):
     """ datetime in iso8601 format parser """
@@ -11,19 +12,190 @@ def datetime_parser(DT: str):
     dt = datetime.datetime.strptime(a, "%Y-%m-%dT%H:%M:%S")
     return dt
 
+def json_print(json_object):
+    """
+    Json object pretty print
+    """
+    parsed = json.loads(json_object)
+    print(json.dumps(parsed, indent=4, sort_keys=True))
+
+
 class MoyClassAPI:
 
-    def __init__(self, token, company_id, form_id, language='en-US'):
-        self.company_id = company_id
-        self.form_id = form_id
-        self.headers = {
-            "Accept": "application/vnd.yclients.v2+json",
-            'Accept-Language': language,
-            'Authorization': "Bearer {}".format(token),
-            'Cache-Control': "no-cache"
-        }
-        # if __show_debugging==True code will show debugging process
-        self.__show_debugging = False
+    def __init__(self, api_key):
+
+        self.api_key = api_key  # your access key
+        self.token = self.__get_token()
+
+    def __get_token(self):
+        """
+        Authorization. Obtaining a token for working with the API.
+        You can create and view API keys in the CRM section "My Class" - "Settings - API".
+        """
+        url = "https://api.moyklass.com/v1/company/auth/getToken"
+        return self._post_request(url, headers=None)['accessToken']
+
+    #################################################################
+    ##################### G E T   M E T H O D S #####################
+    #################################################################
+
+    def _get_request(self, url, get_auth="default", headers="default"):
+        """
+        Get request template
+        """
+        if(get_auth == "default"):
+            get_auth = {'apiKey':self.api_key}
+        if(headers == "default"):
+            headers = {"x-access-token": self.token}
+        r = requests.get(
+            url=url,
+            json=get_auth,
+            headers=headers,
+        )
+        if (r.status_code == 200):
+            return r.json()
+        else:
+            print(f"Error: {r.status_code}")
+            return None
+
+    def get_company_branches(self):
+        """
+        Returns a list of branches
+        """
+        url = "https://api.moyklass.com/v1/company/filials"
+        return self._get_request(url)
+
+    def get_company_rooms(self):
+        """
+        Company audiences
+        """
+        url = "https://api.moyklass.com/v1/company/rooms"
+        return self._get_request(url)
+
+    def get_company_managers(self):
+        """
+        Company employees
+        """
+        url = "https://api.moyklass.com/v1/company/managers"
+        return self._get_request(url)
+
+    def get_students(self):
+        """
+        Company students (clients / users )
+        """
+        url = "https://api.moyklass.com/v1/company/users"
+        return self._get_request(url)['users']
+
+    def get_records(self):
+        """
+        Returns a list of requests (records) in groups
+        """
+        url = "https://api.moyklass.com/v1/company/joins"
+        return self._get_request(url)['joins']
+
+    def get_record_info(self, rid):
+        """
+        rid: record id
+        Returns info about the request (record)
+        """
+        url = f"https://api.moyklass.com/v1/company/joins/{rid}"
+        return self._get_request(url)
+
+    def get_courses(self):
+        """
+        Returns a list of courses
+        """
+        url = "https://api.moyklass.com/v1/company/courses"
+        return self._get_request(url)
+
+    def get_classes(self):
+        """
+        Returns a list of classes
+        """
+        url = "https://api.moyklass.com/v1/company/classes"
+        return self._get_request(url)
+
+    def get_class_info(self, cid):
+        """
+        cid: class id
+        Returns info about the class
+        """
+        url = f"https://api.moyklass.com/v1/company/classes/{cid}"
+        return self._get_request(url)
+
+    def get_lessons(self):
+        """
+        Returns a list of lessons
+        """
+        url = "https://api.moyklass.com/v1/company/lessons"
+        return self._get_request(url)['lessons']
+
+    def get_lesson_info(self, lid):
+        """
+        lid: lesson id
+        Returns info about the lesson
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lid}"
+        return self._get_request(url)
+
+    def get_lesson_records(self):
+        """
+        Returns a list of lessonRecords
+        """
+        url = "https://api.moyklass.com/v1/company/lessonRecords"
+        return self._get_request(url)
+
+    def get_lesson_record_info(self, lrid):
+        """
+        lrid: lesson record id
+        Returns info about the lesson record
+        """
+        url = f"https://api.moyklass.com/v1/company/lessonRecords/{lrid}"
+        return self._get_request(url)
+
+    def get_(self):
+        """
+        Returns a list of
+        """
+        url = ""
+        return self._get_request(url)
+
+    #################################################################
+    #################### P O S T   M E T H O D S ####################
+    #################################################################
+
+    def _post_request(self, url, post_auth="default", headers="default"):
+        """
+        Post request template
+        """
+        if(post_auth == "default"):
+            post_auth = {'apiKey':self.api_key}
+        if(headers == "default"):
+            post_auth = {"x-access-token": self.token}
+        r = requests.post(
+            url = url,
+            json = post_auth,
+            headers = headers,
+        )
+        if(r.status_code == 200):
+            print('Token granted')
+            return r.json()
+        else:
+            print('Autorisation error')
+
+    # def create_manager(self):
+    #     """
+    #     Create company employee
+    #     """
+    #     url = "https://api.moyklass.com/v1/company/managers"
+    #     return self._post_request(url)
+
+
+
+
+
+
+
 
     #################################################################
     ########### O L D   L I B R A R Y   F U N C T I O N S ###########
