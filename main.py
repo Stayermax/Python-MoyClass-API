@@ -4,10 +4,18 @@ This is example use of MoyClass library.
 """
 
 from moyclass import MoyClassAPI
-import pandas as pd
 import credentials
 
-def get_df(function):
+import pandas as pd
+pd.set_option('display.max_columns', None)
+pd.set_option("max_colwidth", None)
+
+
+# unnecessary
+import os
+from pprint import pprint
+
+def func_df(function):
     """
     Generic function for DataFrame creation
     """
@@ -15,6 +23,40 @@ def get_df(function):
     df = pd.DataFrame(l)
     print(df.columns)
     return df
+
+def resp_df(dict_list):
+    """
+    Generic function for DataFrame creation
+    """
+    df = pd.DataFrame(dict_list)
+    print(df.columns)
+    return df
+
+def make_or_read(path, func):
+    if (os.path.exists(path)):
+        df = pd.read_csv(path)
+    else:
+        df = make_df(func)
+        df.to_csv(path, index=False)
+    return df
+
+def get_dataframes():
+    users_path = 'saved_data/users_df.csv'
+    courses_path = 'saved_data/courses_df.csv'
+    classes_path = 'saved_data/classes_df.csv'
+    lessons_path = 'saved_data/lessons_df.csv'
+    lessons_records_path = 'saved_data/lessons_records_df.csv'
+    joins_path = 'saved_data/joins_df.csv'
+
+    users_df = make_or_read(users_path, api.get_users)
+    courses_df = make_or_read(courses_path, api.get_courses)
+    classes_df = make_or_read(classes_path, api.get_classes)
+    lessons_df = make_or_read(lessons_path, api.get_lessons)
+    lessons_records_df = make_or_read(lessons_records_path, api.get_lesson_records)
+    joins_df =  make_or_read(joins_path, api.get_joins)
+
+    return users_df, courses_df, classes_df, lessons_df, lessons_records_df, joins_df
+
 
 if __name__ == '__main__':
     API_KEY = credentials.API_KEY
@@ -30,60 +72,34 @@ if __name__ == '__main__':
     # print(f"Lessons : {api.get_lessons()}") # + lesson info
     # print(f"Lesson records : {api.get_lesson_records()}") # + lesson_record info
 
-    # stud_df = get_df(api.get_students)
-    # rec_df = get_df(api.get_records)
-    df = get_df(api.get_lessons)
-    print(api.get_lesson_info(df['id'][0]))
-    # print(df)
+    # users_df, courses_df, classes_df, lessons_df, lessons_records_df, joins_df = get_dataframes()
+
+    # Get clients list
+
+    # pprint(api.get_users()['stats'])
 
 
+    uid = 1715582 #1741162
 
-    # Show debugging process
-    # api.show_debugging()
-    #
-    # # Get user token from the system
-    # # You can save this token (like bearer token)
-    # #   and there is no need to update it every time
-    # user_token = api.get_user_token(login, password)
-    #
-    # # Update autorisation parameters of the api class with user token
-    # api.update_user_token(user_token)
-    #
-    # # Shows user permissions
-    # api.show_user_permissions()
-    #
-    # # Get clients list
-    # clients_data_list = api.get_clients_data()
-    #
-    # # parse clients data
-    # df = api.parse_clients_data(clients_data_list)
-    # # show id, name and number of visits for all clients
-    # print(df[['id', 'name', 'visits']])
-    #
-    # # clients ids list
-    # all_clients_ids = list(df['id'])
-    #
-    # # show all visits for client with cid
-    # cid = 20419758
-    # client_visits = api.get_visits_for_client(cid)
-    # print(f'Client {cid} visits')
-    # print(f'{pd.DataFrame(client_visits)}')
-    #
-    # # show all visits for all clients
-    # all_clients_visits = api.get_visits_data_for_clients_list(all_clients_ids)
-    # for cid in all_clients_visits.keys():
-    #     print(f'Client {cid} visits')
-    #     print(f'{pd.DataFrame(all_clients_visits[cid])}')
-    #
-    # # show all attended visits for client with cid
-    # cid = 20419758
-    # client_visits = api.get_attended_visits_for_client(cid)
-    # print(f'Client {cid} attended visits')
-    # print(f'{pd.DataFrame(client_visits)}')
-    #
-    # # show attended visits information for clients:
-    # df = api.get_attended_visits_dates_information(all_clients_ids)
-    # print(f'Attended visits dataframe: {df}')
-    #
-    # # show attended visits information for clients with at least one visit:
-    # print(f"Attended visits ndataframe with no gaps {df[df['visits_number']>0]}")
+    u_info = api.get_user_info(uid)
+    print("USER INFO:")
+    pprint(u_info)
+    # Joins:
+    joins_classes = {join['id']:join['classId'] for join in u_info['joins']}
+    classes_joins = {join['classId']:join['id'] for join in u_info['joins']}
+    print(f"User {uid} joins_ids to classes_ids: {joins_classes}")
+    print(f"User {uid} classes_ids to joins_ids: {classes_joins}")
+
+    params = [['userId',f'{uid}'], ['date','2021-10-08'],['date', '2021-11-08']]
+
+    less = api.get_lessons(params)
+    l_df = resp_df(less)
+    print(f"LESSONS: ")
+    print(l_df.head())
+
+    less = api.get_lesson_records(params)['lessonRecords']
+    lr_df = resp_df(less)
+    print(f"LESSONS RECORDS: ")
+    print(lr_df.head(30))
+
+

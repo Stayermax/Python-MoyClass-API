@@ -39,7 +39,7 @@ class MoyClassAPI:
     ##################### G E T   M E T H O D S #####################
     #################################################################
 
-    def _get_request(self, url, get_auth="default", headers="default"):
+    def _get_request(self, url, get_auth="default", headers="default", params="default"):
         """
         Get request template
         """
@@ -47,10 +47,13 @@ class MoyClassAPI:
             get_auth = {'apiKey':self.api_key}
         if(headers == "default"):
             headers = {"x-access-token": self.token}
+        if(params == "default"):
+            params = None
         r = requests.get(
             url=url,
             json=get_auth,
             headers=headers,
+            params=params
         )
         if (r.status_code == 200):
             return r.json()
@@ -79,38 +82,46 @@ class MoyClassAPI:
         url = "https://api.moyklass.com/v1/company/managers"
         return self._get_request(url)
 
-    def get_students(self):
+    def get_users(self):
         """
-        Company students (clients / users )
+        Company users (clients / students )
         """
         url = "https://api.moyklass.com/v1/company/users"
-        return self._get_request(url)['users']
+        return self._get_request(url)
 
-    def get_records(self):
+    def get_user_info(self, uid):
         """
-        Returns a list of requests (records) in groups
+        uid: user id
+        Returns info about the user
+        """
+        url = f"https://api.moyklass.com/v1/company/users/{uid}"
+        return self._get_request(url)
+
+    def get_joins(self):
+        """
+        Returns a list of joins ( requests / records ) in groups ( Список заявок )
         """
         url = "https://api.moyklass.com/v1/company/joins"
         return self._get_request(url)['joins']
 
-    def get_record_info(self, rid):
+    def get_joins_info(self, jid):
         """
-        rid: record id
-        Returns info about the request (record)
+        jid: join id
+        Returns info about the join ( request / record ) ( Информация о заявке )
         """
-        url = f"https://api.moyklass.com/v1/company/joins/{rid}"
+        url = f"https://api.moyklass.com/v1/company/joins/{jid}"
         return self._get_request(url)
 
     def get_courses(self):
         """
-        Returns a list of courses
+        Returns a list of courses ( Список программ )
         """
         url = "https://api.moyklass.com/v1/company/courses"
         return self._get_request(url)
 
     def get_classes(self):
         """
-        Returns a list of classes
+        Returns a list of classes ( Список групп )
         """
         url = "https://api.moyklass.com/v1/company/classes"
         return self._get_request(url)
@@ -118,37 +129,37 @@ class MoyClassAPI:
     def get_class_info(self, cid):
         """
         cid: class id
-        Returns info about the class
+        Returns info about the class ( Информация о группе )
         """
         url = f"https://api.moyklass.com/v1/company/classes/{cid}"
         return self._get_request(url)
 
-    def get_lessons(self):
+    def get_lessons(self, params="default"):
         """
-        Returns a list of lessons
+        Returns a list of lessons ( Список занятий )
         """
         url = "https://api.moyklass.com/v1/company/lessons"
-        return self._get_request(url)['lessons']
+        return self._get_request(url, params=params)['lessons']
 
     def get_lesson_info(self, lid):
         """
         lid: lesson id
-        Returns info about the lesson
+        Returns info about the lesson ( Информация о занятии )
         """
         url = f"https://api.moyklass.com/v1/company/lessons/{lid}"
         return self._get_request(url)
 
-    def get_lesson_records(self):
+    def get_lesson_records(self, params="default"):
         """
-        Returns a list of lessonRecords
+        Returns a list of lessonRecords ( Список записей на занятия )
         """
         url = "https://api.moyklass.com/v1/company/lessonRecords"
-        return self._get_request(url)
+        return self._get_request(url, params=params)#['lessonRecords']
 
     def get_lesson_record_info(self, lrid):
         """
         lrid: lesson record id
-        Returns info about the lesson record
+        Returns info about the lesson record ( Информация о записи на занятие )
         """
         url = f"https://api.moyklass.com/v1/company/lessonRecords/{lrid}"
         return self._get_request(url)
@@ -158,6 +169,14 @@ class MoyClassAPI:
         Returns a list of
         """
         url = ""
+        return self._get_request(url)
+
+    def get__info(self, id):
+        """
+        id:  id
+        Returns info about the  ( Информация о  )
+        """
+        url = f"/{id}"
         return self._get_request(url)
 
     #################################################################
