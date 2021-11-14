@@ -1,7 +1,7 @@
 # coding=utf-8
-import json
+import os
+import math
 import requests
-import time
 import pandas as pd
 import datetime
 import json
@@ -19,6 +19,62 @@ def json_print(json_object):
     parsed = json.loads(json_object)
     print(json.dumps(parsed, indent=4, sort_keys=True))
 
+def data_load(method, entity_name, params = None, load_new_data = True):
+    """
+    Function loads data entities and transfers them into dataframe
+
+    :param method: function that requests data from server and returns data in format:
+        {
+            "entity_name": [ {...}, {...}] , # list of dictionaries
+            "stats": {
+                "totalItems": 5
+            }
+        },
+        or in format:
+        [ { ... } ] # list of dictionaries
+    :param entity_name: name of the data returned
+        First format entity_name examples: "users", "lessonRecords", "lessons", "joins"
+        Second format entity_name examples: "filials", "rooms", "managers"
+    :param params: QUERY PARAMETERS ( options can be seen on https://api.moyklass.com/ for each entity_name)
+    :return: dataframe with data
+    """
+    if(not os.path.exists('saved_data')):
+        os.mkdir('saved_data')
+    data_path = f"saved_data/{entity_name}_df.csv"
+    if (os.path.exists(data_path) and load_new_data == False):
+        df = pd.read_csv(data_path)
+        print(f"{entity_name}_df is loaded from file")
+    else:
+        page_entities_num = 100 # default value
+
+        # add limit parameter in case it's not in the params
+        if(params != None):
+            has_limit = False
+            for param in params:
+                if(param[0]=='limit'):
+                    page_entities_num = param[1]
+                    has_limit = False
+            if (not has_limit):
+                params.append(['limit', page_entities_num])
+        if (params == None):
+            params = [['limit', page_entities_num]]
+
+        first_response = method(params)
+        if(type(first_response) == dict):
+            items_num = first_response['stats']['totalItems']
+            print(f"Number of {entity_name} with requested params: {items_num}")
+            pages_num = math.ceil(items_num / page_entities_num)
+            start = datetime.now()
+            full_list = []
+            for i in range(pages_num):
+                full_list += method(params + [['offset', f'{page_entities_num * i}']])[entity_name]
+            df = pd.DataFrame(full_list)
+            print(f"{entity_name[0].upper()}{entity_name[1:]} data loaded in {(datetime.now() - start).seconds} seconds ")
+        else:
+            print(entity_name)
+            df = pd.DataFrame(first_response)
+        df.to_csv(data_path, index=False)
+    return df
 
 class MoyClassAPI:
 

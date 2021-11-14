@@ -1,78 +1,18 @@
 """
-Code last update 07.11.2021
+Code last update 14.11.2021
 This is example use of MoyClass library.
 """
 
-from moyclass import MoyClassAPI
+from moyclass import MoyClassAPI, data_load
 import credentials
 import pandas as pd
 pd.set_option('display.max_columns', None)
 pd.set_option("max_colwidth", None)
 
 # Libraries for my example
-import os
 from datetime import datetime, timedelta
-import math
 import json
 from pprint import pprint
-
-def data_load(func, entity_name, params = None, load_new_data = True):
-    """
-    Function loads data entities and transfers them into dataframe
-
-    :param func: function that requests data from server and returns data in format:
-        {
-            "entity_name": [ {...}, {...}] , # list of dictionaries
-            "stats": {
-                "totalItems": 5
-            }
-        },
-        or in format:
-        [ { ... } ] # list of dictionaries
-    :param entity_name: name of the data returned
-        First format entity_name examples: "users", "lessonRecords", "lessons", "joins"
-        Second format entity_name examples: "filials", "rooms", "managers"
-    :param params: QUERY PARAMETERS ( options can be seen on https://api.moyklass.com/ for each entity_name)
-    :return: dataframe with data
-
-    """
-    if(not os.path.exists('saved_data')):
-        os.mkdir('saved_data')
-    data_path = f"saved_data/{entity_name}_df.csv"
-    if (os.path.exists(data_path) and load_new_data == False):
-        df = pd.read_csv(data_path)
-        print(f"{entity_name}_df is loaded from file")
-    else:
-        page_entities_num = 100 # default value
-
-        # add limit parameter in case it's not in the params
-        if(params != None):
-            has_limit = False
-            for param in params:
-                if(param[0]=='limit'):
-                    page_entities_num = param[1]
-                    has_limit = False
-            if (not has_limit):
-                params.append(['limit', page_entities_num])
-        if (params == None):
-            params = [['limit', page_entities_num]]
-
-        first_response = func(params)
-        if(type(first_response) == dict):
-            items_num = first_response['stats']['totalItems']
-            print(f"Number of {entity_name} with requested params: {items_num}")
-            pages_num = math.ceil(items_num / page_entities_num)
-            start = datetime.now()
-            full_list = []
-            for i in range(pages_num):
-                full_list += func(params + [['offset', f'{page_entities_num * i}']])[entity_name]
-            df = pd.DataFrame(full_list)
-            print(f"{entity_name[0].upper()}{entity_name[1:]} data loaded in {(datetime.now() - start).seconds} seconds ")
-        else:
-            print(entity_name)
-            df = pd.DataFrame(first_response)
-        df.to_csv(data_path, index=False)
-    return df
 
 def badUsersSearch(api : MoyClassAPI, load_new_data = True):
     """
@@ -131,7 +71,7 @@ def badUsersSearch(api : MoyClassAPI, load_new_data = True):
                 else:
                     user_visits[userId] = {classId: [[date, visit]]}
 
-    pprint(user_visits)
+    # pprint(user_visits)
 
     good_users = []
     bad_users = []
@@ -154,6 +94,10 @@ def badUsersSearch(api : MoyClassAPI, load_new_data = True):
             bad_users.append([userId, user_data_dict[userId]['name']])
         else:
             good_users.append([userId, user_data_dict[userId]['name']])
+
+    file = open(f'saved_data/bu_{datetime.now()}.txt', 'w')
+    pprint(bad_users, file)
+    file.close()
 
     return bad_users
 
@@ -186,9 +130,6 @@ if __name__ == '__main__':
 
     # bu = badUsersSearch(api, load_new_data=True)
     # print(f'bad users number: {len(bu)}')
-    # for u in bu:
-    #     print(u)
 
-    print('=========================')
-    # API_test_functions(api)
+    API_test_functions(api)
 
