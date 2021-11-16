@@ -28,7 +28,16 @@ def badUsersSearch(api : MoyClassAPI, load_new_data = True):
 
     # Get all users as dataframe and turn them into dictionary {uId: {'name': 'Oleg', 'clientStateId': 179}}
     user_df = data_load(api.get_users, 'users', load_new_data=load_new_data)
-    user_data_dict = user_df[['name', 'clientStateId', 'id']].set_index('id').to_dict(orient='index')
+    user_data_dict = user_df[['name', 'filials', 'id']].set_index('id').to_dict(orient='index')
+
+    # Get joins where user status is 'Учится' ('statusId': 2)
+    params = [['statusId', '2']]
+    joins_df = data_load(api.get_joins, 'joins', params=params, load_new_data=load_new_data)
+    user_good_groups = joins_df[['userId', 'classId']].groupby('userId')
+    for userId in user_data_dict:
+        user_data_dict[userId]['StudyGroups'] = []
+        if userId in user_good_groups.groups:
+            user_data_dict[userId]['StudyGroups'] = user_good_groups.get_group(userId)['classId'].values
 
     # Get last month (last 31 days) lessons with lesson records:
     from_date = datetime.today().date() - timedelta(days=31)
@@ -40,27 +49,34 @@ def badUsersSearch(api : MoyClassAPI, load_new_data = True):
                  'topic', 'description', 'teacherIds', 'status']
     lessons_with_records_df = lessons_with_records_df.drop(drop_cols, axis=1)
 
+    branches = api.get_company_branches()
+    branches_df = pd.DataFrame(branches)
+    branches_id = branches_df[['name', 'id']].set_index('id').to_dict(orient='index')
+
     # user_visits structure:
     # {userId: {classId: [['date', 'visit_status']]}}
+
     user_visits = {}
     for index, row in lessons_with_records_df.iterrows():
         classId = row['classId']
         date = row['date']
         record = row['records']
         if (len(record)):
-            if(type(record)==str):
-                record = record.replace("\'", "\"")
-                record = record.replace("True", "\"True\"")
-                record = record.replace("False", "\"False\"")
-                record = record.replace("None", "\"None\"")
-                record = json.loads(record)
+            # if(type(record)==str):
+            #     record = record.replace("\'", "\"")
+            #     record = record.replace("True", "\"True\"")
+            #     record = record.replace("False", "\"False\"")
+            #     record = record.replace("None", "\"None\"")
+            #     record = json.loads(record)
             for el in record:
                 userId = el['userId']
                 lessonId = el['lessonId']
+                if(classId not in user_data_dict[userId]['StudyGroups']):
+                    continue
                 if(type(el['visit']) == bool and el['visit'] == True):
                     visit = 1
-                elif(type(el['visit']) == str and el['visit'] == "True"):
-                    visit = 1
+                # elif(type(el['visit']) == str and el['visit'] == "True"):
+                #     visit = 1
                 else:
                     visit = 0
                 if (userId in user_visits.keys()):
@@ -71,15 +87,10 @@ def badUsersSearch(api : MoyClassAPI, load_new_data = True):
                 else:
                     user_visits[userId] = {classId: [[date, visit]]}
 
-    # pprint(user_visits)
-
     good_users = []
     bad_users = []
     for userId in user_visits.keys():
         isBad = True
-        # Статус учится - 98582
-        if (user_data_dict[userId]['clientStateId'] != 98582):
-            continue
         for classId in user_visits[userId]:
             dates_visits = user_visits[userId][classId]
             dates_visits.sort(key=lambda el: datetime.strptime(el[0], "%Y-%m-%d"))
@@ -90,13 +101,17 @@ def badUsersSearch(api : MoyClassAPI, load_new_data = True):
                 if (dates_visits[-1][1] == 1 or dates_visits[-2][1] == 1):
                     isBad = False
         user_visits[userId]['isBad'] = isBad
+
+        filials = [branches_id[fid]['name'] for fid in user_data_dict[userId]['filials']]
         if (isBad == True):
-            bad_users.append([userId, user_data_dict[userId]['name']])
+            bad_users.append([userId, user_data_dict[userId]['name'], filials])
         else:
-            good_users.append([userId, user_data_dict[userId]['name']])
+            good_users.append([userId, user_data_dict[userId]['name'], filials])
 
     file = open(f'saved_data/bu_{datetime.now()}.txt', 'w')
-    pprint(bad_users, file)
+    file.write(f"Bad users number: {len(bad_users)}\n")
+    for el in bad_users:
+        file.write(f"{el[0]}, {el[1]} : {el[2]}\n")
     file.close()
 
     return bad_users
@@ -124,12 +139,13 @@ def API_test_functions(api: MoyClassAPI):
     pass
 
 if __name__ == '__main__':
-
+    st = datetime.now()
     API_KEY = credentials.API_KEY
     api = MoyClassAPI(api_key=API_KEY)
 
-    # bu = badUsersSearch(api, load_new_data=True)
-    # print(f'bad users number: {len(bu)}')
+    bu = badUsersSearch(api, load_new_data=True)
+    print(f'bad users number: {len(bu)}')
 
-    API_test_functions(api)
+    # API_test_functions(api)
 
+    print(f"Total time taken: {datetime.now() - st}")

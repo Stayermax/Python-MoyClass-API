@@ -3,14 +3,9 @@ import os
 import math
 import requests
 import pandas as pd
-import datetime
+from datetime import datetime
 import json
-
-def datetime_parser(DT: str):
-    """ datetime in iso8601 format parser """
-    a, b = DT.split('+')
-    dt = datetime.datetime.strptime(a, "%Y-%m-%dT%H:%M:%S")
-    return dt
+import pickle as pkl
 
 def json_print(json_object):
     """
@@ -21,7 +16,8 @@ def json_print(json_object):
 
 def data_load(method, entity_name, params = None, load_new_data = True):
     """
-    Function loads data entities and transfers them into dataframe
+    Function loads data entities and transfers them into dataframe. Dataframe then saved as pickle file and
+     can be loaded next time you run the code (we use pickle and not to_csv method in order to save types of df columns)
 
     :param method: function that requests data from server and returns data in format:
         {
@@ -36,13 +32,18 @@ def data_load(method, entity_name, params = None, load_new_data = True):
         First format entity_name examples: "users", "lessonRecords", "lessons", "joins"
         Second format entity_name examples: "filials", "rooms", "managers"
     :param params: QUERY PARAMETERS ( options can be seen on https://api.moyklass.com/ for each entity_name)
+    :param load_new_data: if True loads data from the server. Otherwise tries to find corresponding pickle
+     file in 'saved_data' folder
+
+
     :return: dataframe with data
     """
     if(not os.path.exists('saved_data')):
         os.mkdir('saved_data')
-    data_path = f"saved_data/{entity_name}_df.csv"
+    data_path = f"saved_data/{entity_name}_df.pkl"
     if (os.path.exists(data_path) and load_new_data == False):
-        df = pd.read_csv(data_path)
+        with open(data_path, 'rb') as f:
+            df = pkl.load(f)
         print(f"{entity_name}_df is loaded from file")
     else:
         page_entities_num = 100 # default value
@@ -73,7 +74,8 @@ def data_load(method, entity_name, params = None, load_new_data = True):
         else:
             print(entity_name)
             df = pd.DataFrame(first_response)
-        df.to_csv(data_path, index=False)
+        with open(data_path, 'wb') as f:
+            pkl.dump(df,f)
     return df
 
 class MoyClassAPI:
@@ -81,21 +83,10 @@ class MoyClassAPI:
     def __init__(self, api_key):
 
         self.api_key = api_key  # your access key
-        self.token = self.__get_token()
+        self.token = self._get_token()
 
-    def __get_token(self):
-        """
-        Authorization. Obtaining a token for working with the API.
-        You can create and view API keys in the CRM section "My Class" - "Settings - API".
-        """
-        url = "https://api.moyklass.com/v1/company/auth/getToken"
-        return self._post_request(url, headers=None)['accessToken']
 
-    #################################################################
-    ##################### G E T   M E T H O D S #####################
-    #################################################################
-
-    def _get_request(self, url, get_auth="default", headers="default", params=None):
+    def __get_request(self, url, get_auth="default", headers="default", params=None):
         """
         Get request template
         """
@@ -115,129 +106,7 @@ class MoyClassAPI:
             print(f"Error: {r.status_code}, Message: {r.json()['code']}")
             return None
 
-    def get_company_branches(self, params=None):
-        """
-        Returns a list of branches
-        """
-        url = "https://api.moyklass.com/v1/company/filials"
-        return self._get_request(url, params=params)
-
-    def get_company_rooms(self, params=None):
-        """
-        Company audiences
-        """
-        url = "https://api.moyklass.com/v1/company/rooms"
-        return self._get_request(url, params=params)
-
-    def get_company_managers(self, params=None):
-        """
-        Company employees
-        """
-        url = "https://api.moyklass.com/v1/company/managers"
-        return self._get_request(url, params=params)
-
-    def get_users(self, params=None):
-        """
-        Company users (clients / students )
-        """
-        url = "https://api.moyklass.com/v1/company/users"
-        return self._get_request(url, params=params)
-
-    def get_user_info(self, uid, params=None):
-        """
-        uid: user id
-        Returns info about the user
-        """
-        url = f"https://api.moyklass.com/v1/company/users/{uid}"
-        return self._get_request(url, params=params)
-
-    def get_joins(self, params=None):
-        """
-        Returns a list of joins ( requests / records ) in groups ( Список заявок )
-        """
-        url = "https://api.moyklass.com/v1/company/joins"
-        return self._get_request(url, params=params)
-
-    def get_joins_info(self, jid, params=None):
-        """
-        jid: join id
-        Returns info about the join ( request / record ) ( Информация о заявке )
-        """
-        url = f"https://api.moyklass.com/v1/company/joins/{jid}"
-        return self._get_request(url, params=params)
-
-    def get_courses(self, params=None):
-        """
-        Returns a list of courses ( Список программ )
-        """
-        url = "https://api.moyklass.com/v1/company/courses"
-        return self._get_request(url, params=params)
-
-    def get_classes(self, params=None):
-        """
-        Returns a list of classes ( Список групп )
-        """
-        url = "https://api.moyklass.com/v1/company/classes"
-        return self._get_request(url, params=params)
-
-    def get_class_info(self, cid, params=None):
-        """
-        cid: class id
-        Returns info about the class ( Информация о группе )
-        """
-        url = f"https://api.moyklass.com/v1/company/classes/{cid}"
-        return self._get_request(url, params=params)
-
-    def get_lessons(self, params=None):
-        """
-        Returns a list of lessons ( Список занятий )
-        """
-        url = "https://api.moyklass.com/v1/company/lessons"
-        return self._get_request(url, params=params)
-
-    def get_lesson_info(self, lid, params=None):
-        """
-        lid: lesson id
-        Returns info about the lesson ( Информация о занятии )
-        """
-        url = f"https://api.moyklass.com/v1/company/lessons/{lid}"
-        return self._get_request(url, params=params)
-
-    def get_lesson_records(self, params=None):
-        """
-        Returns a list of lessonRecords ( Список записей на занятия )
-        """
-        url = "https://api.moyklass.com/v1/company/lessonRecords"
-        return self._get_request(url, params=params)
-
-    def get_lesson_record_info(self, lrid, params=None):
-        """
-        lrid: lesson record id
-        Returns info about the lesson record ( Информация о записи на занятие )
-        """
-        url = f"https://api.moyklass.com/v1/company/lessonRecords/{lrid}"
-        return self._get_request(url, params=params)
-
-    def get_(self, params=None):
-        """
-        Returns a list of
-        """
-        url = ""
-        return self._get_request(url, params=params)
-
-    def get__info(self, id, params=None):
-        """
-        id:  id
-        Returns info about the  ( Информация о  )
-        """
-        url = f"/{id}"
-        return self._get_request(url, params=params)
-
-    #################################################################
-    #################### P O S T   M E T H O D S ####################
-    #################################################################
-
-    def _post_request(self, url, post_auth="default", headers="default", params=None):
+    def __post_request(self, url, post_auth="default", headers="default", params=None):
         """
         Post request template
         """
@@ -245,17 +114,167 @@ class MoyClassAPI:
             post_auth = {'apiKey':self.api_key}
         if(headers == "default"):
             post_auth = {"x-access-token": self.token}
-        r = requests.post(
-            url = url,
-            json = post_auth,
-            headers = headers,
-            params = params
-        )
-        if(r.status_code == 200):
-            print('Token granted')
+        try:
+            r = requests.post(
+                url = url,
+                json = post_auth,
+                headers = headers,
+                params = params
+            )
+            r.raise_for_status()
             return r.json()
-        else:
-            print('Autorisation error')
+        except requests.exceptions.HTTPError as err:
+            raise err
+
+        # except requests.exceptions.RequestException as err
+        #     raise requests.exceptions.BaseHTTPError()
+        #     print(f"Error: {r.status_code}, Message: {r.json()['code']}")
+        #     return None
+
+    # Autorization:
+    def _get_token(self):
+        """
+        Authorization. Obtaining a token for working with the API.
+        You can create and view API keys in the CRM section "My Class" - "Settings - API".
+        """
+        url = "https://api.moyklass.com/v1/company/auth/getToken"
+        token = self.__post_request(url, headers=None)['accessToken']
+        print(f"Token obtained")
+        return token
+
+    def _refresh_token(self):
+        """
+        Authorization. Obtaining a token for working with the API.
+        You can create and view API keys in the CRM section "My Class" - "Settings - API".
+        """
+        url = "https://api.moyklass.com/v1/company/auth/refreshToken"
+        return self.__post_request(url, headers=None)['accessToken']
+
+    def get_company_branches(self, params=None):
+        """
+        Returns a list of branches ( filials )
+        """
+        url = "https://api.moyklass.com/v1/company/filials"
+        return self.__get_request(url, params=params)
+
+    def get_company_rooms(self, params=None):
+        """
+        Returns a list of Company audiences
+        """
+        url = "https://api.moyklass.com/v1/company/rooms"
+        return self.__get_request(url, params=params)
+
+    def get_company_managers(self, params=None):
+        """
+        Returns a list of Company employees
+        """
+        url = "https://api.moyklass.com/v1/company/managers"
+        return self.__get_request(url, params=params)
+
+    def get_users(self, params=None):
+        """
+        Returns a list of Company users (clients / students )
+        """
+        url = "https://api.moyklass.com/v1/company/users"
+        return self.__get_request(url, params=params)
+
+    def get_user_info(self, uid, params=None):
+        """
+        uid: user id
+        Returns info about the user
+        """
+        url = f"https://api.moyklass.com/v1/company/users/{uid}"
+        return self.__get_request(url, params=params)
+
+    def get_joins(self, params=None):
+        """
+        Returns a list of joins ( requests / records ) in groups ( Список заявок )
+        """
+        url = "https://api.moyklass.com/v1/company/joins"
+        return self.__get_request(url, params=params)
+
+    def get_joins_info(self, jid, params=None):
+        """
+        jid: join id
+        Returns info about the join ( request / record ) ( Информация о заявке )
+        """
+        url = f"https://api.moyklass.com/v1/company/joins/{jid}"
+        return self.__get_request(url, params=params)
+
+    def get_courses(self, params=None):
+        """
+        Returns a list of courses ( Список программ )
+        """
+        url = "https://api.moyklass.com/v1/company/courses"
+        return self.__get_request(url, params=params)
+
+    def get_classes(self, params=None):
+        """
+        Returns a list of classes ( Список групп )
+        """
+        url = "https://api.moyklass.com/v1/company/classes"
+        return self.__get_request(url, params=params)
+
+    def get_class_info(self, cid, params=None):
+        """
+        cid: class id
+        Returns info about the class ( Информация о группе )
+        """
+        url = f"https://api.moyklass.com/v1/company/classes/{cid}"
+        return self.__get_request(url, params=params)
+
+    def get_lessons(self, params=None):
+        """
+        Returns a list of lessons ( Список занятий )
+        """
+        url = "https://api.moyklass.com/v1/company/lessons"
+        return self.__get_request(url, params=params)
+
+    def get_lesson_info(self, lid, params=None):
+        """
+        lid: lesson id
+        Returns info about the lesson ( Информация о занятии )
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lid}"
+        return self.__get_request(url, params=params)
+
+    def get_lesson_records(self, params=None):
+        """
+        Returns a list of lessonRecords ( Список записей на занятия )
+        """
+        url = "https://api.moyklass.com/v1/company/lessonRecords"
+        return self.__get_request(url, params=params)
+
+    def get_lesson_record_info(self, lrid, params=None):
+        """
+        lrid: lesson record id
+        Returns info about the lesson record ( Информация о записи на занятие )
+        """
+        url = f"https://api.moyklass.com/v1/company/lessonRecords/{lrid}"
+        return self.__get_request(url, params=params)
+
+    def get_(self, params=None):
+        """
+        Returns a list of
+        """
+        url = ""
+        return self.__get_request(url, params=params)
+
+    def get__info(self, id, params=None):
+        """
+        id:  id
+        Returns info about the  ( Информация о  )
+        """
+        url = f"/{id}"
+        return self.__get_request(url, params=params)
+
+    #################################################################
+    #################### P O S T   M E T H O D S ####################
+    #################################################################
+
+    #################################################################
+    ##################### G E T   M E T H O D S #####################
+    #################################################################
 
     # def create_manager(self):
     #     """
