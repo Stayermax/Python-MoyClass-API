@@ -1,5 +1,5 @@
 """
-Code last update 14.11.2021
+Code last update 19.11.2021
 This is example use of MoyClass library.
 """
 
@@ -136,16 +136,20 @@ def examplesFunction(api : MoyClassAPI):
     print(f"Lessons with records dataframe : {lessons_with_records_df}")
 
 def API_test_functions(api: MoyClassAPI):
-    pass
+    # pprint(api.get_company_branches())
+    # pprint(api.get_company_managers())
+
+
+    api.create_manager(params=params)
 
 if __name__ == '__main__':
     st = datetime.now()
     API_KEY = credentials.API_KEY
     api = MoyClassAPI(api_key=API_KEY)
 
-    bu = badUsersSearch(api, load_new_data=True)
-    print(f'bad users number: {len(bu)}')
+    # bu = badUsersSearch(api, load_new_data=True)
+    # print(f'bad users number: {len(bu)}')
 
-    # API_test_functions(api)
+    API_test_functions(api)
 
     print(f"Total time taken: {datetime.now() - st}")
