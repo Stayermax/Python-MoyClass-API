@@ -119,7 +119,6 @@ def badUsersSearch(api : MoyClassAPI, load_new_data = True):
 def examplesFunction(api : MoyClassAPI):
      # Example 1: Get all managers:
     print(f"Managers as list : {api.get_company_managers()}")
-    print(f"Managers as dataframe : {data_load(api.get_company_managers, 'managers')}")
 
     # Example 2: Get all users as dataframe
     user_df = data_load(api.get_users, 'users')
@@ -135,12 +134,40 @@ def examplesFunction(api : MoyClassAPI):
     lessons_with_records_df = data_load(api.get_lessons, 'lessons', params=params)
     print(f"Lessons with records dataframe : {lessons_with_records_df}")
 
+    # Example 5: Create two new managers, change one of them, then delete both of them
+    Existed_manager = api.get_company_managers()[0]
+    m1_data = {'name': 'Николай Николаевич','phone': '88005553535',
+               'filials': [Existed_manager['filials'][0]],'roles': Existed_manager['roles']}
+    m2_data = {'name': 'Петр Петрович','phone': '84952128506',
+               'filials': [Existed_manager['filials'][0]],'roles': Existed_manager['roles']}
+    New_manager_1 = api.create_manager(manager_info=m1_data)
+    New_manager_2 = api.create_manager(manager_info=m2_data)
+
+    m1_new_data = {'name': 'Николай Николаевич Николаев','phone': '88005553535',
+               'filials': [Existed_manager['filials'][0]],'roles': Existed_manager['roles'],
+                   'enabled':False, 'color':'#FFFFFF'}
+    New_manager_1 = api.change_manager(New_manager_1['id'], manager_info=m1_new_data)
+
+    api.delete_manager(New_manager_1['id'], replaceToManagerId=Existed_manager['id'])
+    api.delete_manager(New_manager_2['id'], replaceToManagerId=Existed_manager['id'])
+
+
 def API_test_functions(api: MoyClassAPI):
-    # pprint(api.get_company_branches())
-    # pprint(api.get_company_managers())
+    Existed_manager = api.get_company_managers()[0]
+    m1_data = {'name': 'Николай Николаевич', 'phone': '88005553535',
+               'filials': [Existed_manager['filials'][0]], 'roles': Existed_manager['roles']}
 
+    New_manager_1 = api.create_manager(manager_info=m1_data)
 
-    api.create_manager(params=params)
+    roles = api.get_roles()
+    pprint(roles)
+    pprint(api.get_role_info(roles[0]['id']))
+
+    rates = api.get_rates()
+    pprint(rates)
+    pprint(api.get_rate_info(rates[0]['id']))
+
+    api.delete_manager(managerId=New_manager_1['id'], replaceToManagerId=Existed_manager['id'])
 
 if __name__ == '__main__':
     st = datetime.now()
@@ -149,6 +176,8 @@ if __name__ == '__main__':
 
     # bu = badUsersSearch(api, load_new_data=True)
     # print(f'bad users number: {len(bu)}')
+
+    # examplesFunction(api)
 
     API_test_functions(api)
 
