@@ -1,9 +1,9 @@
 """
-Code last update 19.11.2021
+Code last update 23.11.2021
 This is example use of MoyClass library.
 """
 
-from moyclass import MoyClassAPI, data_load
+from moyclass import MoyClassCompanyAPI
 import credentials
 import pandas as pd
 pd.set_option('display.max_columns', None)
@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 import json
 from pprint import pprint
 
-def badUsersSearch(api : MoyClassAPI, load_new_data = True):
+def badUsersSearch(api : MoyClassCompanyAPI, load_new_data = True):
     """
     We assume that user is good if he attended at least one of the
      last two lessons in at least one of his groups (classes) during the last month.
@@ -27,12 +27,12 @@ def badUsersSearch(api : MoyClassAPI, load_new_data = True):
     """
 
     # Get all users as dataframe and turn them into dictionary {uId: {'name': 'Oleg', 'clientStateId': 179}}
-    user_df = data_load(api.get_users, 'users', load_new_data=load_new_data)
+    user_df = api.data_load(api.get_users, 'users', load_new_data=load_new_data)
     user_data_dict = user_df[['name', 'filials', 'id']].set_index('id').to_dict(orient='index')
 
     # Get joins where user status is 'Учится' ('statusId': 2)
     params = [['statusId', '2']]
-    joins_df = data_load(api.get_joins, 'joins', params=params, load_new_data=load_new_data)
+    joins_df = api.data_load(api.get_joins, 'joins', params=params, load_new_data=load_new_data)
     user_good_groups = joins_df[['userId', 'classId']].groupby('userId')
     for userId in user_data_dict:
         user_data_dict[userId]['StudyGroups'] = []
@@ -43,7 +43,7 @@ def badUsersSearch(api : MoyClassAPI, load_new_data = True):
     from_date = datetime.today().date() - timedelta(days=31)
     to_date = datetime.today().date()
     params = [['date', f"{from_date}"], ['date', f"{to_date}"], ['includeRecords', 'true']]
-    lessons_with_records_df = data_load(api.get_lessons, 'lessons', params=params, load_new_data=load_new_data)
+    lessons_with_records_df = api.data_load(api.get_lessons, 'lessons', params=params, load_new_data=load_new_data)
 
     drop_cols = ['beginTime', 'endTime', 'createdAt', 'filialId', 'roomId', 'comment', 'maxStudents',
                  'topic', 'description', 'teacherIds', 'status']
@@ -116,22 +116,22 @@ def badUsersSearch(api : MoyClassAPI, load_new_data = True):
 
     return bad_users
 
-def examplesFunction(api : MoyClassAPI):
-     # Example 1: Get all managers:
+def examplesFunction(api : MoyClassCompanyAPI):
+    # Example 1: Get all managers:
     print(f"Managers as list : {api.get_company_managers()}")
 
     # Example 2: Get all users as dataframe
-    user_df = data_load(api.get_users, 'users')
+    user_df = api.data_load(api.get_users, 'users')
     print(f"Users as dataframe : {user_df}")
 
     # Example 3: Get all lessons as dataframe:
-    print(f"Lessons as dataframe : {data_load(api.get_lessons, 'lessons')}")
+    print(f"Lessons as dataframe : {api.data_load(api.get_lessons, 'lessons')}")
 
     # Example 4: Get last month (last 31 days) lessons with lesson records:
     from_date = datetime.today().date() - timedelta(days=31)
     to_date = datetime.today().date()
     params = [['date', f"{from_date}"], ['date', f"{to_date}"], ['includeRecords', 'true']]
-    lessons_with_records_df = data_load(api.get_lessons, 'lessons', params=params)
+    lessons_with_records_df = api.data_load(api.get_lessons, 'lessons', params=params)
     print(f"Lessons with records dataframe : {lessons_with_records_df}")
 
     # Example 5: Create two new managers, change one of them, then delete both of them
@@ -151,34 +151,91 @@ def examplesFunction(api : MoyClassAPI):
     api.delete_manager(New_manager_1['id'], replaceToManagerId=Existed_manager['id'])
     api.delete_manager(New_manager_2['id'], replaceToManagerId=Existed_manager['id'])
 
+    # Example 6:
 
-def API_test_functions(api: MoyClassAPI):
-    Existed_manager = api.get_company_managers()[0]
-    m1_data = {'name': 'Николай Николаевич', 'phone': '88005553535',
-               'filials': [Existed_manager['filials'][0]], 'roles': Existed_manager['roles']}
 
-    New_manager_1 = api.create_manager(manager_info=m1_data)
 
-    roles = api.get_roles()
-    pprint(roles)
-    pprint(api.get_role_info(roles[0]['id']))
+def string_parser(string):
+    els = string.split("\n\n")
+    for el in els:
 
-    rates = api.get_rates()
-    pprint(rates)
-    pprint(api.get_rate_info(rates[0]['id']))
+        parts = el.split('\n')
+        # print(f"\n{parts}")
+        p_name = parts[0].replace(" ", "").replace("\t", "")
+        if(parts[1]=='required'):
+            p_req = 'required'
+            p_type = parts[2]
+        else:
+            p_req = None
+            p_type = parts[1]
+        p_desc = parts[-1]
+        p_default = None
+        p_example = None
+        p_enum = None
+        if (len(parts) > 3 and p_req is None) or (len(parts) > 4 and p_req is 'required'):
+            for part in parts[2:-1]:
+                if('Default: ' in part):
+                    p_default = part
+                if('Example: ' in part):
+                    p_example = part
+                if('Enum: ' in part):
+                    p_enum = part
+        if(p_req is not None):
+            print(f"{p_name} ( required ): {p_desc} [ {p_type} ] ")
+        else:
+            print(f"{p_name} : {p_desc} [ {p_type} ] ")
+        if (p_default is not None):
+            if(p_enum is not None):
+                print(f" {p_default}, {p_enum}")
+            else:
+                print(f" {p_default}")
+        elif(p_enum is not None):
+            print(f" {p_enum}")
 
-    api.delete_manager(managerId=New_manager_1['id'], replaceToManagerId=Existed_manager['id'])
+
+
+
+def API_test_functions(api: MoyClassCompanyAPI):
+    pprint(api.data_load(api.get_invoices, 'invoices'))
+
 
 if __name__ == '__main__':
     st = datetime.now()
     API_KEY = credentials.API_KEY
-    api = MoyClassAPI(api_key=API_KEY)
+    api = MoyClassCompanyAPI(api_key=API_KEY)
 
     # bu = badUsersSearch(api, load_new_data=True)
     # print(f'bad users number: {len(bu)}')
 
     # examplesFunction(api)
 
-    API_test_functions(api)
+    # API_test_functions(api)
 
     print(f"Total time taken: {datetime.now() - st}")
+
+    string = """autoCreate	
+boolean
+Создавать ли счет автоматически
+
+createRule	
+string
+Enum: "create" "setStatus"
+Когда создавать счет. Актуально при autoCreate=true. create - создать счет при создании заявки, setStatus - создать счет при установке статуса
+
+joinStateId	
+Array of numbers or null
+Статусы заявки, при установке которых будет создан счет. Актуально при createRule=setStatus
+
+payDateType	
+string or null
+Enum: "retative" "exact"
+Правила установки срока оплаты. relative - дата определяется относительно даты создания, exact - устанавливается точная дата оплаты
+
+payDateDays	
+number or null
+Количество дней, через сколько нужно оплатить счет. Например, если сегодня 2020-01-01, и payDateDays=3, то срок оплаты будет установлен в 2020-01-04. Актуально при payDateType=relative
+
+payDate	
+string or null <date>
+Срок оплаты счета. Актуально при payDateType=exact"""
+    string_parser(string)
