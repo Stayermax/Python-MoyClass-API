@@ -213,29 +213,25 @@ if __name__ == '__main__':
 
     print(f"Total time taken: {datetime.now() - st}")
 
-    string = """autoCreate	
-boolean
-Создавать ли счет автоматически
-
-createRule	
+    string = """comment
+required
 string
-Enum: "create" "setStatus"
-Когда создавать счет. Актуально при autoCreate=true. create - создать счет при создании заявки, setStatus - создать счет при установке статуса
+Текст комментария
 
-joinStateId	
-Array of numbers or null
-Статусы заявки, при установке которых будет создан счет. Актуально при createRule=setStatus
+showToUser	
+boolean
+Default: true
+Видимость комментария для ученика
 
-payDateType	
-string or null
-Enum: "retative" "exact"
-Правила установки срока оплаты. relative - дата определяется относительно даты создания, exact - устанавливается точная дата оплаты
+lessonId	
+integer or null <int64>
+ID занятия
 
-payDateDays	
-number or null
-Количество дней, через сколько нужно оплатить счет. Например, если сегодня 2020-01-01, и payDateDays=3, то срок оплаты будет установлен в 2020-01-04. Актуально при payDateType=relative
+classId	
+integer or null <int64>
+ID группы
 
-payDate	
-string or null <date>
-Срок оплаты счета. Актуально при payDateType=exact"""
-    string_parser(string)
+managerId	
+integer or null <int64>
+ID менеджера"""
+    # string_parser(string)

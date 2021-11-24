@@ -13,7 +13,6 @@ class MoyClassCompanyAPI:
     For contacts: vitalkrat@gmail.com
     """
 
-
     def __init__(self, api_key):
 
         self.api_key = api_key  # your access key
@@ -68,7 +67,7 @@ class MoyClassCompanyAPI:
                         has_limit = True
                 if (not has_limit):
                     params.append(['limit', page_entities_num])
-            if (params == None):
+            else:
                 params = [['limit', page_entities_num]]
 
             first_response = method(params)
@@ -144,7 +143,7 @@ class MoyClassCompanyAPI:
         if not void:
             return r.json()
 
-    # Authorization ( Авторизация )
+    # Авторизация ( Authorization )
     def _get_token(self):
         """
         Авторизация. Получение токена для работы с API.
@@ -184,7 +183,7 @@ class MoyClassCompanyAPI:
         if (self.print_Flag):
             print("Token revoked")
 
-    # Company ( Компания )
+    # Компания ( Company )
     def get_company_branches(self):
         """
         Возвращает список филиалов
@@ -203,7 +202,7 @@ class MoyClassCompanyAPI:
         url = "https://api.moyklass.com/v1/company/rooms"
         return self.__request(method = 'GET', url=url)
 
-    # Managers ( Сотрудники )
+    # Сотрудники ( Managers )
     def get_company_managers(self):
         """
         Возвращает список сотрудников
@@ -344,7 +343,7 @@ class MoyClassCompanyAPI:
         url = f"https://api.moyklass.com/v1/company/rates/{rateId}"
         return self.__request(method = 'GET', url=url)
 
-    # Users ( Ученики / Лиды )
+    # Ученики / Лиды ( Users )
     def get_users(self, params=None):
         """
         Производит поиск учеников в соответствии с фильтром и возвращает список учеников
@@ -490,7 +489,7 @@ class MoyClassCompanyAPI:
             print('User attribute updated')
         return resp
 
-    # Payments ( Платежи )
+    # Платежи ( Payments )
     def get_payments(self, params=None):
         """
         Производит поиск заявок платежей в соответствии с фильтром и возвращает их список
@@ -597,7 +596,7 @@ class MoyClassCompanyAPI:
         if (self.print_Flag):
             print("Payment deleted")
 
-    # Invoices ( Счета ) # todo: check on my CRM
+    # Счета ( Invoices ) # todo: check on my CRM
     def get_invoices(self, params=None):
         """
         Производит поиск счетов в соответствии с фильтром и возвращает их список
@@ -665,7 +664,7 @@ class MoyClassCompanyAPI:
         if (self.print_Flag):
             print("Invoice deleted")
 
-    # Joins ( Заявки / Записи ) # todo: check on my CRM
+    # Заявки / Записи ( Joins ) # todo: check on my CRM
     def get_joins(self, params=None):
         """
         Возвращает список заявок (записей) в группы
@@ -673,6 +672,7 @@ class MoyClassCompanyAPI:
         Returns a list of joins ( requests / records ) in groups
 
         :param params: query parameters ( фильтр поиска ) [ list of pairs ]
+        params fields:
         createdAt : Дата создания. Если указана одна дата, то происходит поиск только по одной дате.
          Если указаны 2 даты, то производится поиск по диапазону. [ Array of strings <date> <= 2 characters ]
         updatedAt : Дата изменения. Если указана одна дата, то происходит поиск только по одной дате.
@@ -743,7 +743,7 @@ class MoyClassCompanyAPI:
             print('Join created')
         return resp
 
-    def get_joins_info(self, joinId, params=None):
+    def get_joins_info(self, joinId):
         """
         Возвращает информацию о заявке
 
@@ -752,7 +752,7 @@ class MoyClassCompanyAPI:
         joinId: ID заявки
         """
         url = f"https://api.moyklass.com/v1/company/joins/{joinId}"
-        return self.__request(method = 'GET', url=url, params=params)
+        return self.__request(method = 'GET', url=url)
 
     def change_join(self, joinId, join_info : dict):
         """
@@ -843,87 +843,1145 @@ class MoyClassCompanyAPI:
             print('Join tags were updated')
         return resp
 
-    # Tasks ( Задачи )
+    # Задачи ( Tasks ) # todo: check on my CRM
+    def get_tasks(self, params=None):
+        """
+        Производит поиск задач в соответствии с фильтром и возвращает их список
 
-    # Courses ( Группы )
+        Searches for tasks according to the filter and returns list of them
 
-    # advSources ( Cправочники )
+        :param params: query parameters ( фильтр поиска ) [ list of pairs ]
+        createdAt : Дата создания. Если указана одна дата, то происходит поиск только по одной дате.
+         Если указаны 2 даты, то производится поиск по диапазону. [ Array of strings <date> <= 2 characters ]
+        filialId : ID филиала. [ Array of integers <int64> ]
+        classId : ID группы [ Array of integers <int64> ]
+        userId : ID ученика [ integer <int64> ]
+        managerId : ID сотрудника [ integer <int64> ]
+        isComplete : Статус задачи, завершена или нет. [ boolean ]
+        offset : Номер первой записи. Используется для постраничного вывода. [ integer ]
+         Default: 0
+        limit : Максимальное количество возвращаемых строк. Используется для постраничного вывода. [ integer ]
+         Default: 100
+        """
+        url = "https://api.moyklass.com/v1/company/tasks"
+        return self.__request(method='GET', url=url, params=params)
 
-    # Files ( Файлы )
+    def create_task(self, task_info: dict):
+        """
+        Создает новую задачу. Функция возвращает задачу в формате JSON ( dict )
 
-    # Subscriptions ( Абонементы )
+        Creates a new task. The function returns the task in JSON format (dict)
 
-    # userSubscriptions ( Абонементы учеников )
+        :param task_info:
+        body ( required ): Текст задачи [ string <= 250 characters ]
+        beginDate ( required ): Начало задачи [ string <date-time> ]
+        endDate ( required ): Окончание задачи [ string <date-time> ]
+        isAllDay : Задача на весь день [ boolean ]
+         Default: false
+        isComplete : Задача выполнена [ boolean ]
+         Default: false
+        reminds : За сколько времени напомнить о задаче (в миллисекундах) [ Array of integers or null <int64> ]
+        managerIds : Список id ответственных сотрудников (если одновременно указаны managerId и
+         managerIds, то используется managerIds) [ Array of integers <int64> ]
+        userId : ID ученика [ integer or null <int64> ]
+        ownerId : ID сотрудника, который создал задачу, null при автоматическом создании [ integer or null <int64> ]
+        classIds : Список ID групп [ Array of integers or null <int64> ]
+        filialIds : Список ID филиалов [ Array of integers or null <int64> ]
+        categoryId : ID категории задачи [ integer or null <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/tasks"
+        resp = self.__request(method='POST', url=url, json=task_info)
+        if (self.print_Flag):
+            print(' created')
+        return resp
 
-    # userComments ( Комментарии учеников )
+    def get_task_info(self, taskId):
+        """
+        Возвращает информацию о задаче
 
-    # Contracts ( Документы )
+        Returns information about a task
 
+        paymentId: ID задачи
+        """
+        url = f"https://api.moyklass.com/v1/company/tasks/{taskId}"
+        return self.__request(method='GET', url=url)
+
+    def change_task(self, taskId, _info: dict):
+        """
+        Изменяет задачу и возвращает его обновленные данные в форме JSON ( dict ).
+
+        Modifies the task and returns its updated data in JSON (dict) form.
+
+        :param taskId: ID задачи
+        :param _info: Новые данные задачи
+        payment_info fields:
+        body ( required ): Текст задачи [ string <= 250 characters ]
+        beginDate ( required ): Начало задачи [ string <date-time> ]
+        endDate ( required ): Окончание задачи [ string <date-time> ]
+        isAllDay : Задача на весь день [ boolean ]
+         Default: false
+        isComplete : Задача выполнена [ boolean ]
+         Default: false
+        reminds : За сколько времени напомнить о задаче (в миллисекундах) [ Array of integers or null <int64> ]
+        managerIds : Список id ответственных сотрудников (если одновременно указаны managerId
+         и managerIds, то используется managerIds) [ Array of integers <int64> ]
+        userId : ID ученика [ integer or null <int64> ]
+        ownerId : ID сотрудника, который создал задачу, null при автоматическом создании [ integer or null <int64> ]
+        classIds : Список ID групп [ Array of integers or null <int64> ]
+        filialIds : Список ID филиалов [ Array of integers or null <int64> ]
+        categoryId : ID категории задачи [ integer or null <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/tasks/{taskId}"
+        resp = self.__request(method='POST', url=url, json=_info)
+        if (self.print_Flag):
+            print('Task updated')
+        return resp
+
+    def delete_task(self, taskId):
+        """
+        Удаляет задачу из системы.
+
+        Removes the task from the system.
+
+        :param taskId: ID задачи
+        """
+        url = f"https://api.moyklass.com/v1/company/tasks/{taskId}"
+        self.__request(method='DELETE', url=url, void=True)
+        if (self.print_Flag):
+            print("Task deleted")
+
+    # Группы ( Courses ) # todo: check on my CRM
     def get_courses(self, params=None):
         """
-        Returns a list of courses ( Список программ )
+        Возвращает список программ обучения
+
+        Returns a list of courses
+
+        :param params: query parameters ( фильтр поиска ) [ list of pairs ]
+        includeClasses : Включить в ответ группы [ boolean ]
+         Default: false
         """
         url = "https://api.moyklass.com/v1/company/courses"
         return self.__request(method = 'GET', url=url, params=params)
 
-    def get_classes(self, params=None):
+    def get_classes(self):
         """
-        Returns a list of classes ( Список групп )
+        Возвращает список групп (наборов)
+
+        Returns a list of classes
         """
         url = "https://api.moyklass.com/v1/company/classes"
-        return self.__request(method = 'GET', url=url, params=params)
+        return self.__request(method = 'GET', url=url)
 
-    def get_class_info(self, cid, params=None):
+    def get_class_info(self, classId):
         """
-        cid: class id
-        Returns info about the class ( Информация о группе )
+        Возвращает основную информацию о группе
+
+        Returns information about a
+
+        :param classId: ID группы
         """
-        url = f"https://api.moyklass.com/v1/company/classes/{cid}"
-        return self.__request(method = 'GET', url=url, params=params)
+        url = f"https://api.moyklass.com/v1/company/classes/{classId}"
+        return self.__request(method = 'GET', url=url)
+
+    def add_file_to_lesson(self, lessonId, file_type, file_data : dict ):
+        """
+        Добавляет файл задания на занятие
+
+        Adds a task file to the lesson
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param file_type: Тип задания (Домашнее / за занятие) , Enum: "home" "lesson"
+        :param file_data:
+        data : Данные в формате base64 [ string ]
+        original : Имя файла [ string ]
+        mimetype : mimetype файла [ string ]
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}/task/{file_type}/files"
+        self.__request(method = 'POST', url=url, json=file_data, void=True)
+        if (self.print_Flag):
+            print('File added to the lesson')
+
+    def get_task_files(self, lessonId, file_type):
+        """
+        Возвращает массив файлов прикрепленных к заданию
+
+        Returns an array of files attached to the task
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param file_type: Тип задания (Домашнее / за занятие) , Enum: "home" "lesson"
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}/task/{file_type}/files"
+        return self.__request(method = 'GET', url=url)
+
+    def create_or_change_lesson_task(self, lessonId, file_type, text : str):
+        """
+        Создает или, если уже создано, изменяет задание на занятие
+
+        Creates or, if already created, changes a task for a lesson
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param file_type: Тип задания (Домашнее / за занятие) , Enum: "home" "lesson"
+        :param text: Текст задания в формате HTML [ string ]
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}/task/{file_type}"
+        self.__request(method='POST', url=url, json=text, void=True)
+        if (self.print_Flag):
+            print('Task for the lesson was created or changed')
+
+    def delete_lesson_task(self, lessonId, file_type):
+        """
+        Удаляет задание из системы.
+
+        Deletes a task for a lesson from the system.
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param file_type: Тип задания (Домашнее / за занятие) , Enum: "home" "lesson"
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}/task/{type}"
+        self.__request(method='DELETE', url=url, void=True)
+        if (self.print_Flag):
+            print('Task for the lesson was deleted')
+
+    def create_answer_for_task(self, lessonId, answer_info: dict):
+        """
+        Создает ответ на задание
+
+        Creates an answer to a task
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param answer_info: answer data
+        answer_info fields:
+        userId ( required ): ID пользователя [ integer <int64> ]
+        type ( required ): Тип ответа [ string ] , Enum: "home" "lesson"
+        status : Статус [ string ] , Enum: "draft" "sent" "accept" "return"
+        text : Текст ответа [ string or null ]
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}/answer"
+        self.__request(method='POST', url=url, json=answer_info, void=True)
+        if (self.print_Flag):
+            print('Answer for the task created')
+
+    def get_task_answer(self, lessonId, answerId):
+        """
+        Возвращает ответ на задание
+
+        Returns the answer to the task
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param answerId: ID ответа [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}/answer/{answerId}"
+        return self.__request(method='POST', url=url, )
+
+    # todo: AUTHORIZATIONS
+    def edit_task_answer(self, lessonId, answerId, answer_info: dict):
+        """
+        Создает ответ на задание
+
+        Creates an answer to a task
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param answerId: ID ответа [ integer <int64> ]
+        :param answer_info: answer data
+        answer_info fields:
+        text : Текст ответа [ string or null ]
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}/answer/{answerId}"
+        self.__request(method='POST', url=url, json=answer_info, void=True)
+        if (self.print_Flag):
+            print('Answer for the task edited')
+
+    def delete_task_answer(self, lessonId, answerId):
+        """
+        Удаляет ответ на задание
+
+        Deletes an answer to a task
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param answerId: ID ответа [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}/answer/{answerId}"
+        self.__request(method='DELETE', url=url, void=True)
+        if (self.print_Flag):
+            print('Answer for the task was deleted')
+
+    def change_answer_status(self, lessonId, answerId, status_info: dict):
+        """
+        Меняет статус ответа на задание
+
+        Changes the status of the response to the task
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param answerId: ID ответа [ integer <int64> ]
+        :param status_info: answer data
+        status_info fields:
+        status ( required ): Статус [ string ] , Enum: "draft" "sent" "accept" "return"
+        managerId ( required ): ID преподавателя, который сменил статус [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}/answer/{answerId}/status"
+        self.__request(method='POST', url=url, json=status_info, void=True)
+        if (self.print_Flag):
+            print('Answer status was changed')
+
+    def add_comment_to_answer(self, lessonId, answerId, comment_info: dict):
+        """
+        Меняет статус ответа на задание
+
+        Changes the status of the response to the task
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param answerId: ID ответа [ integer <int64> ]
+        :param comment_info: answer data
+        comment_info fields:
+        text : Текст комментария [ string ]
+        managerId : ID преподавателя, который оставил комментарий [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}/answer/{answerId}/comment"
+        self.__request(method='POST', url=url, json=comment_info, void=True)
+        if (self.print_Flag):
+            print('Comment to the answer was added')
+
+    def attach_file_to_answer(self, lessonId, answerId, file_info: dict):
+        """
+        Прикрепляет файл к ответу на задание
+
+        Attaches a file to a response to an assignment
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param answerId: ID ответа [ integer <int64> ]
+        :param file_info: answer data
+        file_info fields:
+        data : Данные в формате base64 [ string ]
+        name : Имя файла [ string ]
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}/answer/{answerId}/files"
+        self.__request(method='POST', url=url, json=file_info, void=True)
+        if (self.print_Flag):
+            print('File was added to the answer')
+
+    def delete_file_from_answer(self, lessonId, answerId, fileId):
+        """
+        Удаляет файла к ответу на задание
+
+        Deletes the file to the answer to the task
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param answerId: ID ответа [ integer <int64> ]
+        :param fileId: ID файла [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}/answer/{answerId}/files/{fileId}"
+        self.__request(method='DELETE', url=url, void=True)
+        if (self.print_Flag):
+            print('File was deleted from the answer')
+
+    def delete_comment_from_answer(self, lessonId, answerId, commentId):
+        """
+        Меняет статус ответа на задание
+
+        Changes the status of the response to the task
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param answerId: ID ответа [ integer <int64> ]
+        :param commentId: ID комментария [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}/answer/{answerId}/comment/{commentId}"
+        self.__request(method='DELETE', url=url, void=True)
+        if (self.print_Flag):
+            print('Comment was deleted from the answer')
+
+    def create_or_change_lesson_mark(self, lessonId, userId, file_type, grade_info: dict):
+        """
+        Создает или, если уже создано, изменяет оценку на занятие
+
+        Creates or, if already created, changes the grade for the lesson
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param userId: ID пользователя [ integer <int64> ]
+        :param file_type: Тип оценки (За дз / за занятие) [ string ], Enum: "home" "lesson"
+        :param grade_info:
+        grade_info fields:
+        value : Оценка 	[ number ]
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}/mark/{file_type}/{userId}"
+        self.__request(method='POST', url=url, json=grade_info, void=True)
+        if (self.print_Flag):
+            print('Grade for the lesson was created or changed')
+
+    def delete_lesson_grade(self, lessonId, userId, file_type):
+        """
+        Удаляет оценку из системы.
+
+        Removes a grade from the system.
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param userId: ID пользователя [ integer <int64> ]
+        :param file_type: Тип оценки (За дз / за занятие) [ string ], Enum: "home" "lesson"
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}/mark/{file_type}/{userId}"
+        self.__request(method='DELETE', url=url, void=True)
+        if (self.print_Flag):
+            print('Mark for the lesson was deleted')
 
     def get_lessons(self, params=None):
         """
-        Returns a list of lessons ( Список занятий )
+        Производит поиск занятий в соответствии с фильтром и возвращает их список
+
+        Searches for lessons according to the filter and returns list of them
+
+        :param params: query parameters ( фильтр поиска ) [ list of pairs ]
+        params fields:
+        date : Дата проведения занятий. Если указана одна дата, то происходит поиск только по одной дате.
+         Если указаны 2 даты, то производится поиск по диапазону [ Array of strings <date> <= 2 characters ]
+        roomId : ID аудитории [ Array of integers <int64> ]
+        filialId : ID филиала. [ Array of integers <int64> ]
+        classId : ID группы [ Array of integers <int64> ]
+        teacherId : ID сотрудника - преподавателя [ Array of integers <int64> ]
+        statusId : Статус занятия. 0 - не проведено, 1 - проведено [ integer ]
+        userId : ID ученика, записанного на занятие [ integer <int64> ]
+        offset : Номер первой записи. Используется для постраничного вывода. [ integer ]
+         Default: 0
+        limit : Максимальное количество возвращаемых строк. Используется для постраничного вывода. [ integer ]
+         Default: 100
+        includeRecords : Включить в ответ записи на занятия [ boolean ]
+         Default: false
+        includeMarks : Включить в ответ оценки к занятию [ boolean ]
+         Default: false
+        includeTasks : Включить в ответ задания к занятию [ boolean ]
+         Default: false
+        includeTaskAnswers : Включить в ответ ответы на задание [ boolean ]
+         Default: false
+        includeUserSubscriptions : Включить в ответ абонементы ученика [ boolean ]
+         Default: false
         """
         url = "https://api.moyklass.com/v1/company/lessons"
         return self.__request(method = 'GET', url=url, params=params)
 
-    def get_lesson_info(self, lid, params=None):
+    def get_lesson_info(self, lessonId, params=None):
         """
-        lid: lesson id
-        Returns info about the lesson ( Информация о занятии )
+        Возвращает информацию о занятии
+
+        Returns information about the lesson
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param params: query parameters [ list of pairs ]
+        params fields:
+        includeRecords : Включить в ответ записи на занятия [ boolean ]
+         Default: false
+        includeMarks : Включить в ответ оценки к занятию [ boolean ]
+         Default: false
+        includeTasks : Включить в ответ задания к занятию [ boolean ]
+         Default: false
+        includeTaskAnswers : Включить в ответ ответы на задание [ boolean ]
+         Default: false
         """
-        url = f"https://api.moyklass.com/v1/company/lessons/{lid}"
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}"
         return self.__request(method = 'GET', url=url, params=params)
+
+    def change_lesson_status(self, lessonId, status_info: dict):
+        """
+        Изменяет статус занятия
+
+        Changes the status of the lesson
+
+        :param lessonId: ID занятия [ integer <int64> ]
+        :param status_info:
+        status_info fields:
+        status ( required ): Статус занятия. 0 - не проведено, 1 - проведено [ integer <int64> ], Enum: 0 1
+        """
+        url = f"https://api.moyklass.com/v1/company/lessons/{lessonId}/status"
+        self.__request(method = 'POST', url=url, json=status_info, void=True)
+        if (self.print_Flag):
+            print('Status for the lesson was changed')
 
     def get_lesson_records(self, params=None):
         """
-        Returns a list of lessonRecords ( Список записей на занятия )
+        Производит поиск записей на занятия в соответствии с фильтром и возвращает их список
+
+        Searches for lessons records according to the filter and returns list of them
+
+        :param params: query parameters ( фильтр поиска ) [ list of pairs ]
+        params fields:
+        userId : ID ученика [ Array of integers <int64> <= 50 characters ]
+        lessonId : ID занятия [ Array of integers <int64> <= 50 characters ]
+        classId : ID группы [ Array of integers <int64> <= 50 characters ]
+        date : Дата проведения занятий. Если указана одна дата, то происходит поиск только по одной дате.
+         Если указаны 2 даты, то производится поиск по диапазону [ Array of strings <date> <= 2 characters ]
+        free : Бесплатная запись (посещение для ученика будет бесплатным) [ boolean ]
+        visit : Статус посещения (true - ученик посетил занятие, false - пропустил) [ boolean ]
+        test : Пробная запись на занятие [ boolean ]
+        skip : Не учитывать запись в количестве занятых мест [ boolean ]
+        goodReason : Уважительная причина отсутствия (true - есть уважительная причина, false - нет) [ boolean ]
+        paid : Платное занятие (true - платное, false - нет) [ boolean ]
+        includeUserSubscriptions : Включить в ответ абонементы ученика (работает при includeBills=true) [ boolean ]
+         Default: false
+        includeBills : Включить в ответ данные о списании [ boolean ]
+         Default: false
+        limit : Максимальное количество возвращаемых строк. Используется для постраничного вывода. [ integer ]
+         Default: 100
+        offset : Номер первой записи. Используется для постраничного вывода. [ integer ]
+         Default: 0
         """
-        url = "https://api.moyklass.com/v1/company/lessonRecords"
+        url = f"https://api.moyklass.com/v1/company/lessonRecords"
         return self.__request(method = 'GET', url=url, params=params)
 
-    def get_lesson_record_info(self, lrid, params=None):
+    def create_lesson_record(self, lessonRecord_info=None):
         """
-        lrid: lesson record id
-        Returns info about the lesson record ( Информация о записи на занятие )
+        Создает новую запись на занятие
+
+        Creates a new lesson record
+
+        :param lessonRecord_info: Информация о записи
+        lessonRecord_info fields:
+        userId ( required ): ID ученика [ integer <int64> ]
+        lessonId ( required ): ID занятия [ integer <int64> ]
+        free : Бесплатная запись (посещение для ученика будет бесплатным) [ boolean ]
+         Default: false
+        visit : Статус посещения (true - ученик посетил занятие, false - пропустил) [ boolean ]
+         Default: false
+        goodReason : Уважительная причина отсутствия (true - есть уважительная причина, false - нет) [ boolean ]
+         Default: false
+        test : Пробная запись на занятие [ boolean ]
+         Default: false
+        userSubscription : Абонемент ученика [ object (UserSubscription) ]
         """
-        url = f"https://api.moyklass.com/v1/company/lessonRecords/{lrid}"
+        url = f"https://api.moyklass.com/v1/company/lessonRecords"
+        resp = self.__request(method = 'POST', url=url, json=lessonRecord_info)
+        if (self.print_Flag):
+            print('Lesson record was created')
+        return resp
+
+    def get_lesson_record_info(self, recordId):
+        """
+        Возвращает информацию о записи на занятие
+
+        Returns information about the lesson record
+        recordId: ID записи
+        """
+        url = f"https://api.moyklass.com/v1/company/lessonRecords/{recordId}"
+        return self.__request(method = 'GET', url=url)
+
+    def change_lesson_record(self,recordId, lessonRecord_info: dict):
+        """
+        Изменяет информацию о записи
+
+        Changes information about a record
+
+        :param recordId : ID записи [ integer <int64> ]
+        :param lessonRecord_info: Обновленная информация о записи
+        lessonRecord_info fields:
+        free : Бесплатная запись (посещение для ученика будет бесплатным) [ boolean ]
+         Default: false
+        visit : Статус посещения (true - ученик посетил занятие, false - пропустил) [ boolean ]
+         Default: false
+        goodReason : Уважительная причина отсутствия (true - есть уважительная причина, false - нет) [ boolean ]
+         Default: false
+        """
+        url = f"https://api.moyklass.com/v1/company/lessonRecords/{recordId}"
+        resp = self.__request(method = 'POST', url=url, json=lessonRecord_info)
+        if (self.print_Flag):
+            print('Lesson record was changed')
+        return resp
+
+    def delete_lesson_record(self,recordId):
+        """
+        Удаляет запись на занятие
+
+        Deletes an entry for a lesson
+
+        :param recordId : ID записи [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/lessonRecords/{recordId}"
+        self.__request(method = 'DELETE', url=url, void=True)
+        if (self.print_Flag):
+            print('Lesson record was deleted')
+
+    # todo: AUTHORIZATIONS
+    def delete_lesson_answer(self,lessonId, answerId):
+        """
+        Удаляет ответ на задание
+
+        Deletes the answer to the task
+
+        :param lessonId : ID занятия [ integer <int64> ]
+        :param answerId : ID ответа [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/user/lessons/{lessonId}/answer/{answerId}"
+        self.__request(method = 'DELETE', url=url, void=True)
+        if (self.print_Flag):
+            print('Lesson record was deleted')
+
+    # Cправочники ( advSources ) # todo: check on my CRM
+    def get_advSources(self):
+        """
+        Возвращает список информационных источников
+
+        Returns a list of information sources
+        """
+        url = "https://api.moyklass.com/v1/company/createSources"
+        return self.__request(method = 'GET', url=url)
+
+    def get_createSources(self):
+        """
+        Возвращает список возможных способов заведения клиентов и заявок
+
+        Returns a list of possible ways of placing clients and orders
+        """
+        url = "https://api.moyklass.com/v1/company/createSources"
+        return self.__request(method = 'GET', url=url)
+
+    def get_statusReasons(self, params=None):
+        """
+        Производит поиск  причины изменения статуса записи в соответствии с фильтром и возвращает их список
+
+        Searches for the reason for the change in the status of a record according to the filter and returns
+         a list of them
+
+        :param params: query parameters ( фильтр поиска ) [ list of pairs ]
+        params fields:
+        type : Тип причины [ string ], Default: "join", Enum: "join" "client"
+        """
+        url = "https://api.moyklass.com/v1/company/statusReasons"
         return self.__request(method = 'GET', url=url, params=params)
 
+    def get_userAttributes(self):
+        """
+        Возвращает список всех доступных признаков ученика
+
+        Returns a list of all available traits for the student
+        """
+        url = "https://api.moyklass.com/v1/company/userAttributes"
+        return self.__request(method = 'GET', url=url)
+
+    def get_joinStatuses(self):
+        """
+        Возвращает список статусов заявок
+
+        Returns a list of order statuses
+        """
+        url = "https://api.moyklass.com/v1/company/joinStatuses"
+        return self.__request(method = 'GET', url=url)
+
+    def get_clientStatuses(self):
+        """
+        Возвращает список статусов клиентов
+
+        Returns a list of client statuses
+        """
+        url = "https://api.moyklass.com/v1/company/clientStatuses"
+        return self.__request(method = 'GET', url=url)
+
+    def get_joinTags(self):
+        """
+        Возвращает список тегов для заявок
+
+        Returns a list of tags for tickets
+        """
+        url = "https://api.moyklass.com/v1/company/joinTags"
+        return self.__request(method = 'GET', url=url)
+
+    def get_paymentTypes(self):
+        """
+        Возвращает типы платежей
+
+        Returns payment types
+        """
+        url = "https://api.moyklass.com/v1/company/paymentTypes"
+        return self.__request(method = 'GET', url=url)
+
+    # Файлы ( Files ) # todo: check on my CRM
+    def upload_free_file(self, file_info: dict):
+        """
+        Загрузка свободного файла
+
+        Download a free file
+
+        :param file_info: File data
+        file_info fields:
+        data : Данные в формате base64 [ string ]
+        name : Имя файла [ string ]
+        comment : Комментарий сотрудника [ string or null ]
+        userComment : Комментарий ученика/для ученика [ string or null ]
+        managerId : ID сотрудника, который прикрепляет файл [ integer <int64> ]
+        visible : Флаг определяющий виден ли файл ученику [ boolean or null ]
+         Default: false
+        """
+        url = f"https://api.moyklass.com/v1/company/files"
+        self.__request(method='POST', url=url, json=file_info, void=True)
+        if (self.print_Flag):
+            print('Free file was uploaded')
+
+    def get_user_files(self, userId):
+        """
+        Получение списка файлов пользователя
+
+        Getting a list of user's files
+
+        :param userId: ID ученика [ integer <int64> ]
+        """
+        url = "https://api.moyklass.com/v1/company/files"
+        return self.__request(method='GET', url=url, json={'userId': userId})
+
+    def download_file(self, fileId):
+        """
+        Получение списка файлов пользователя
+
+        Getting a list of user's files
+
+        :param fileId: ID файла [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/files/{fileId}"
+        return self.__request(method='GET', url=url)
+
+    def delete_file(self, fileId):
+        """
+        Удаляет файл  из системы.
+
+        Removes the file from the system.
+
+        :param fileId: ID файла [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/files/{fileId}"
+        self.__request(method='DELETE', url=url, void=True)
+        if (self.print_Flag):
+            print("File was deleted")
+
+    def edit_file(self, fileId, file_info: dict):
+        """
+        Редактирование файла
+
+        File editing
+
+        :param fileId: ID файла
+        :param file_info: Новые данные файла
+        payment_info fields:
+        comment : Комментарий сотрудника [ string or null ]
+        userComment : Комментарий ученика/для ученика [ string or null ]
+        managerId : ID сотрудника, который редактирует файл [ integer or null <int64> ]
+        visible : Флаг определяющий виден ли файл ученику [ boolean or null ]
+         Default: false
+        """
+        url = f"https://api.moyklass.com/v1/company/files/{fileId}"
+        self.__request(method='POST', url=url, json=file_info, void=True)
+        if (self.print_Flag):
+            print('File was edited')
+
+    # Абонементы ( Subscriptions ) # todo: check on my CRM
+    def get_subsciptions(self, params=None):
+        """
+        Производит поиск абонементов в соответствии с фильтром и возвращает их список
+
+        Searches for subsriptions according to the filter and returns list of them
+
+        :param params: query parameters ( фильтр поиска ) [ list of pairs ]
+        params fields:
+        createdAt : Дата создания. Если указана одна дата, то происходит поиск только по одной дате.
+         Если указаны 2 даты, то производится поиск по диапазону. [ Array of strings <date> <= 2 characters ]
+        filialId : ID филиала. [ Array of integers <int64> ]
+        offset : Номер первой записи. Используется для постраничного вывода. [ integer ]
+         Default: 0
+        limit : Максимальное количество возвращаемых строк. Используется для постраничного вывода. [ integer ]
+         Default: 100
+        useDiscount : Применять скидку клиента [ boolean ]
+        externalId : Пользовательский номер абонемента [ string or Array of strings ]
+        subscriptionGroupingId : ID группировки абонементов. [ integer <int64> ]
+        """
+        url = "https://api.moyklass.com/v1/company/subscriptions"
+        return self.__request(method = 'GET', url=url, params=params)
+
+    def create_subsciption(self, subscription_info : dict):
+        """
+        Создает новый абонемент и возвращает его в формате JSON ( dict )
+
+        Creates a new subscription and returns it in JSON format (dict)
+
+        :param subscription_info: Информация об абонементе
+        subscription_info fields:
+        if subscription type == Безлимитный :
+            name ( required ): Название [ string <= 100 characters ]
+            price ( required ): Стоимость [ number <double> >= 1 ]
+            filialIds : ID филиалов. [0] - все филиалы [ Array of integers <int64> ]
+            subscriptionGroupingId : ID группировки абонементов. [ integer <int64> ]
+            period : Срок действия [ string or null^[0-9]+ (day|month|year)$ ]
+            yield ( required ): Цена за занятие [ number <double> ]
+            useDiscount : Применять скидку клиента [ boolean ]
+            courses : ID курсов [ Array of integers <int64> ]
+            classes :  [ Array of integers <int64> ]
+            params:
+                courseIds : Программы, для которых доступен абонемент [ Array of numbers or null ]
+                classIds : Группы, для которых доступен абонемент [ Array of numbers or null ]
+        if subscription type == С фиксированным количеством посещений :
+            name ( required ): Название [ string <= 100 characters ]
+            visitCount ( required ): Количество занятий, 0, если абонемент безлимитный [ integer <int64> >= 1 ]
+            price ( required ): Стоимость [ number <double> >= 1 ]
+            filialIds : ID филиалов. [0] - все филиалы [ Array of integers <int64> ]
+            period : Срок действия [ string or null^[0-9]+ (day|month|year)$ ]
+            courses : ID курсов [ Array of integers <int64> ]
+            classes : ID групп [ Array of integers <int64> ]
+            params:
+                courseIds : Программы, для которых доступен абонемент [ Array of numbers or null ]
+                classIds : Группы, для которых доступен абонемент [ Array of numbers or null ]
+        """
+        url = f"https://api.moyklass.com/v1/company/subscriptions"
+        resp = self.__request(method = 'POST', url=url, json=subscription_info)
+        if (self.print_Flag):
+            print('Subscription created')
+        return resp
+
+    def get_subsciption_info(self, subscriptionId):
+        """
+        Возвращает информацию об абонементе
+
+        Returns information about a subscription
+
+        :param subscriptionId: ID абонемента [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/subscriptions/{subscriptionId}"
+        return self.__request(method = 'GET', url=url)
+
+    def delete_subsciptions(self, subscriptionId):
+        """
+        Удаляет абонемент из системы.
+
+        Removes the subscription from the system.
+
+        :param subscriptionId: ID абонемента [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/subscriptions/{subscriptionId}"
+        self.__request(method='DELETE', url=url, void=True)
+        if (self.print_Flag):
+            print("Subscription was deleted")
+
+    def change_subsciption(self, subscriptionId, subscription_info : dict):
+        """
+        Изменяет абонемент и возвращает его обновленные данные в форме JSON ( dict ).
+
+        Modifies the subsciption and returns its updated data in JSON (dict) form.
+
+        :param subscriptionId: ID абонемента [ integer <int64> ]
+        :param subscription_info: Новые данные абонемента
+        subscription_info fields:
+        if subscription type == Безлимитный :
+            name ( required ): Название [ string <= 100 characters ]
+            price ( required ): Стоимость [ number <double> >= 1 ]
+            filialIds : ID филиалов. [0] - все филиалы [ Array of integers <int64> ]
+            subscriptionGroupingId : ID группировки абонементов. [ integer <int64> ]
+            period : Срок действия [ string or null^[0-9]+ (day|month|year)$ ]
+            useDiscount : Применять скидку клиента [ boolean ]
+            courses : ID курсов [ Array of integers <int64> ]
+            classes : ID групп [ Array of integers <int64> ]
+            params:
+                courseIds : Программы, для которых доступен абонемент [ Array of numbers or null ]
+                classIds : Группы, для которых доступен абонемент [ Array of numbers or null ]
+        if subscription type == С фиксированным количеством посещений :
+            name ( required ): Название [ string <= 100 characters ]
+            visitCount ( required ): Количество занятий, 0, если абонемент безлимитный [ integer <int64> >= 1 ]
+            price ( required ): Стоимость [ number <double> >= 1 ]
+            filialIds : ID филиалов. [0] - все филиалы [ Array of integers <int64> ]
+            period : Срок действия [ string or null^[0-9]+ (day|month|year)$ ]
+            courses : ID курсов [ Array of integers <int64> ]
+            classes : ID групп [ Array of integers <int64> ]
+            params:
+                courseIds : Программы, для которых доступен абонемент [ Array of numbers or null ]
+                classIds : Группы, для которых доступен абонемент [ Array of numbers or null ]
+        """
+        url = f"https://api.moyklass.com/v1/company/subscriptions/{subscriptionId}"
+        resp = self.__request(method = 'POST', url=url, json=subscription_info)
+        if (self.print_Flag):
+            print('Subscription updated')
+        return resp
+
+    def get_subscriptionGroupings(self, params=None):
+        """
+        Производит поиск группировок видов абонементов в соответствии с фильтром и возвращает их список
+
+        Searches for subscription groupings according to the filter and returns list of them
+
+        :param params: query parameters ( фильтр поиска ) [ list of pairs ]
+        params fields:
+        includeSubscriptions : Включить в ответ виды абонементов [ boolean ]
+         Default: false
+        """
+        url = "https://api.moyklass.com/v1/company/subscriptionGroupings"
+        return self.__request(method = 'GET', url=url, params=params)
+
+    # Абонементы учеников ( User's Subscriptions ) # todo: check on my CRM
+    def get_userSubscriptions(self, params=None):
+        """
+        Производит поиск абонементов учеников в соответствии с фильтром и возвращает их список
+
+        Searches for users subscriprions according to the filter and returns list of them
+
+        :param params: query parameters ( фильтр поиска ) [ list of pairs ]
+        params fiels:
+        userId : ID ученика [ integer <int64> ]
+        managerId : ID сотрудника [ integer <int64> ]
+        externalId : Пользовательский номер абонемента [ string or Array of strings ]
+        courseId : ID программы группы абонемента [ integer or Array of integers ]
+        classId : ID группы абонемента [ integer or Array of integers ]
+        mainClassId : ID основной группы абонемента [ integer or Array of integers ]
+        sellDate : Дата продажи. Если указана одна дата, то происходит поиск только по одной дате.
+         Если указаны 2 даты, то производится поиск по диапазону [ Array of strings <date> <= 2 characters ]
+        beginDate : Дата начала действия. Если указана одна дата, то происходит поиск только по одной дате.
+         Если указаны 2 даты, то производится поиск по диапазону [ Array of strings <date> <= 2 characters ]
+        endDate : Дата окончания действия. Если указана одна дата, то происходит поиск только по одной дате.
+         Если указаны 2 даты, то производится поиск по диапазону [ Array of strings <date> <= 2 characters ]
+        statusId : Статус абонемента [ Array of integers ]
+            1 - Не активный
+            2 - Активный
+            3 - Заморожен
+            4 - Окончен
+        offset : Номер первой записи. Используется для постраничного вывода. [ integer ]
+         Default: 0
+        limit : Максимальное количество возвращаемых строк. Используется для постраничного вывода. [ integer ]
+         Default: 100
+        """
+        url = "https://api.moyklass.com/v1/company/userSubscriptions"
+        return self.__request(method = 'GET', url=url, params=params)
+
+    def create_userSubscription(self, userSubscription_info : dict):
+        """
+        Создает новый абонемент ученика. Функция возвращает абонемент ученика в формате JSON ( dict )
+
+        Creates a new student subscription. The function returns the student's subscription in JSON format (dict)
+
+        :param userSubscription_info: Информация об абонементе ученика
+        userSubscription_info fiels:
+        externalId : Пользовательский номер абонемента [ string or null ]
+        userId ( required ): ID ученика [ integer <int64> ]
+        subscriptionId ( required ): ID вида абонемента [ integer <int64> ]
+        originalPrice : Цена абонемента (без учета скидки и доп. компенсации). При создании по умолчанию будет
+         взята цена основного абонемента [ number <double> ]
+        discount : Скидка, % от цены абонемента [ number or null [ 0 .. 100 ] ]
+        extraDiscount : Дополнительная компенсация цены абонемента [ number or null <double> >= 0 ]
+        comment : Комментарий [ string or null ]
+        sellDate ( required ): Дата продажи [ string <date> ]
+        beginDate : Дата начала действия. Если не указан, устанавливается в текущую дату. [ string or null <date> ]
+        endDate : Дата окончания действия [ string or null <date> ]
+        classIds ( required ): Группы, в которых действует абонемент [ Array of integers <int64> ]
+        period : Срок действия. При создании по умолчанию значение будет взято из основного
+         абонемента [ string or null^[0-9]+ (day|month|year)$ ]
+        visitCount : Количество занятий в абонементе. При создании по умолчанию значение будет взято из основного
+         абонемента [ integer or null <int64> <= 200 ]
+        mainClassId ( required ): ID основной группы абонемента [ integer <int64> ]
+        managerId : ID менеджера [ integer or null <int64> ]
+        autodebit : Автоматически списывать средства с баланса [ boolean ]
+         Default: true
+        burnLeftovers : Списывать остатки абонемента после окончания его срока [ boolean ]
+         Default: true
+        useLeftovers : Использовать оставшиеся посещения абонемента после окончания его срока автоматически [ boolean ]
+        Default: true
+        """
+        url = f"https://api.moyklass.com/v1/company/userSubscriptions"
+        resp = self.__request(method = 'POST', url=url, json=userSubscription_info)
+        if (self.print_Flag):
+            print("User's subscriptions was created")
+        return resp
+
+    def get_userSubscription_info(self, userSubscriptionId):
+        """
+        Возвращает информацию об абонементе ученика
+
+        Returns information about a user subscription
+
+        :param userSubscriptionId: ID абонемента ученика [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/userSubscriptions/{userSubscriptionId}"
+        return self.__request(method = 'GET', url=url)
+
+    def delete_userSubscription(self, userSubscriptionId):
+        """
+        Удаляет абонемент ученика  из системы.
+
+        Removes the user subscription from the system.
+
+        :param userSubscriptionId: ID абонемента ученика [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/userSubscriptions/{userSubscriptionId}"
+        self.__request(method='DELETE', url=url, void=True)
+        if (self.print_Flag):
+            print("User's subscription was deleted")
+
+    def change_userSubscription(self, userSubscriptionId, userSubscriptionId_info : dict):
+        """
+        Изменяет абонемент ученика и возвращает его обновленные данные в форме JSON ( dict ).
+
+        Modifies the user's subscription and returns its updated data in JSON (dict) form.
+
+        :param userSubscriptionId: ID абонемента ученика [ integer <int64> ]
+        :param userSubscriptionId_info: Новые данные абонемента ученика
+        payment_info fields:
+        externalId : Пользовательский номер абонемента [ string or null ]
+        sellDate ( required ): Дата продажи [ string <date> ]
+        beginDate ( required ): Дата начала действия [ string <date> ]
+        endDate : Дата окончания действия [ string or null <date> ]
+        price ( required ): Стоимость при продаже [ number <double> >= 0 ]
+        comment : Комментарий [ string ]
+        classIds ( required ): Группы, в которых действует абонемент [ Array of integers <int64> ]
+        period : Срок действия [ string or null^[0-9]+ (day|month|year)$ ]
+        visitCount : Количество занятий в абонементе [ integer or null <int64> <= 200 ]
+         Default: 0
+        mainClassId ( required ): ID основной группы абонемента [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/userSubscriptions/{userSubscriptionId}"
+        resp = self.__request(method = 'POST', url=url, json=userSubscriptionId_info)
+        if (self.print_Flag):
+            print("User's subscriptions was updated")
+        return resp
+
+    def change_userSubscription_status(self, userSubscriptionId, userSubscription_status_info : dict):
+        """
+        Изменяет статус абонемента ученика и возвращает его обновленные данные в форме JSON ( dict ).
+
+        Changes the status of the user's subscription and returns its updated data in JSON (dict) form.
+
+        :param userSubscriptionId: ID абонемента ученика
+        :param userSubscription_status_info: Статус абонемента ученика
+        payment_info fields:
+        statusId ( required ) : Статус абонемента [ integer <int64> ], Enum: 1 2
+            1 - Не активный
+            2 - Активный
+        """
+        url = f"https://api.moyklass.com/v1/company/userSubscriptions/{userSubscriptionId}/status"
+        resp = self.__request(method = 'POST', url=url, json=userSubscription_status_info)
+        if (self.print_Flag):
+            print("User's subscription status was updated")
+        return resp
+
+    def change_userSubscription_freeze(self, userSubscriptionId, userSubscription_freeze_info : dict):
+        """
+        Изменяет заморозку абонемента ученика и возвращает его обновленные данные в форме JSON ( dict ).
+
+        Changes the freeze of the users's subscription and returns its updated data in JSON (dict) form.
+
+        :param userSubscriptionId: ID абонемента ученика [ integer <int64> ]
+        :param userSubscription_freeze_info: Заморозка абонемента ученика
+        payment_info fields:
+        freezeFrom ( required ): Дата начала заморозки [ string <date> ]
+        freezeTo ( required ): Дата окончания заморозки [ string <date> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/userSubscriptions/{userSubscriptionId}/freeze"
+        resp = self.__request(method = 'POST', url=url, json=userSubscription_freeze_info)
+        if (self.print_Flag):
+            print("User's subscription freeze was updated")
+        return resp
+
+    def delete_userSubscription_freeze_status(self, userSubscriptionId):
+        """
+        Удаляет заморозку абонемента ученика и возвращает его обновленные данные в форме JSON ( dict ).
+
+        Removes the freeze of the user's subscription  and returns its updated data in JSON (dict) form.
+
+        :param userSubscriptionId: ID абонемента ученика [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/userSubscriptions/{userSubscriptionId}/freeze"
+        resp = self.__request(method='DELETE', url=url, void=True)
+        if (self.print_Flag):
+            print("User's subscription freeze was deleted")
+        return resp
+
+    # Комментарии учеников ( User's Comments ) # todo: check on my CRM
+    def get_userComments(self, params=None):
+        """
+        Производит поиск комментариям учеников в соответствии с фильтром и возвращает их список
+
+        Searches for users' comments according to the filter and returns list of them
+
+        :param params: query parameters ( фильтр поиска ) [ list of pairs ]
+        params fiels:
+        createdAt : Дата создания. Если указана одна дата, то происходит поиск только по одной дате.
+         Если указаны 2 даты, то производится поиск по диапазону. [ Array of strings <date> <= 2 characters ]
+        classId : ID группы [ Array of integers <int64> ]
+        userId : ID ученика [ integer <int64> ]
+        managerId : ID сотрудника [ integer <int64> ]
+        lessonId : ID занятия [ Array of integers <int64> ]
+        offset : Номер первой записи. Используется для постраничного вывода. [ integer ]
+         Default: 0
+        limit : Максимальное количество возвращаемых строк. Используется для постраничного вывода. [ integer ]
+         Default: 100
+        """
+        url = "https://api.moyklass.com/v1/company/userComments"
+        return self.__request(method = 'GET', url=url, params=params)
+
+    def create_userComment(self, userComment_info : dict):
+        """
+        Создает новый комментарий. Функция возвращает комментарий в формате JSON ( dict )
+
+        Creates a new comment. The function returns a comment in JSON format (dict)
+
+        :param userComment_info: Комментарий
+        userComment_info fields:
+        comment ( required ): Текст комментария [ string ]
+        showToUser : Видимость комментария для ученика [ boolean ]
+         Default: true
+        userId ( required ): ID пользователя [ integer <int64> ]
+        lessonId : ID занятия [ integer or null <int64> ]
+        classId : ID группы [ integer or null <int64> ]
+        managerId : ID менеджера [ integer or null <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/userComments"
+        resp = self.__request(method = 'POST', url=url, json=userComment_info)
+        if (self.print_Flag):
+            print("User's comment was created")
+        return resp
+
+    def change_userComment(self, commentId, userComment_info : dict):
+        """
+        Изменяет комментарий и возвращает его обновленные данные в форме JSON ( dict ).
+
+        Modifies the comment and returns its updated data in JSON (dict) form.
+
+        :param commentId: ID комментария [ integer or null <int64> ]
+        :param userComment_info: Новые данные комментария
+        payment_info fields:
+        comment ( required ): Текст комментария [ string ]
+        showToUser : Видимость комментария для ученика [ boolean ], Default: true
+        lessonId : ID занятия [ integer or null <int64> ]
+        classId : ID группы [ integer or null <int64> ]
+        managerId : ID менеджера [ integer or null <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/userComments/{commentId}"
+        resp = self.__request(method = 'POST', url=url, json=userComment_info)
+        if (self.print_Flag):
+            print("User's comment was updated")
+        return resp
+
+    def get_userComment_info(self, commentId):
+        """
+        Возвращает информацию о комментарии
+
+        Returns information about a comment
+
+        :param commentId: ID комментария [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/userComments/{commentId}"
+        return self.__request(method = 'GET', url=url)
+
+    def delete_userComment(self, commentId):
+        """
+        Удаляет комментарий из системы.
+
+        Removes the comment from the system.
+
+        :param commentId: ID комментария [ integer <int64> ]
+        """
+        url = f"https://api.moyklass.com/v1/company/userComments/{commentId}"
+        self.__request(method='DELETE', url=url, void=True)
+        if (self.print_Flag):
+            print("User's comment was deleted")
+
+    # Документы ( Contracts ) # todo: check on my CRM
     def get_(self, params=None):
         """
-        Returns a list of
-        """
-        url = ""
-        return self.__request(method = 'GET', url=url, params=params)
+        Производит поиск документов в соответствии с фильтром и возвращает их список
 
-    def get__info(self, id, params=None):
+        Searches for сontracts according to the filter and returns list of them
+
+        :param params: query parameters ( фильтр поиска ) [ list of pairs ]
+        params fiels:
+        userId : ID ученика [ integer <int64> ]
         """
-        id:  id
-        Returns info about the  ( Информация о  )
-        """
-        url = f"/{id}"
+        url = "https://api.moyklass.com/v1/company/contracts"
         return self.__request(method = 'GET', url=url, params=params)
 
 class MoyClassUserAPI:
@@ -988,12 +2046,84 @@ class MoyClassUserAPI:
         if not void:
             return r.json()
 
-    # Authorization ( Авторизация )
+    # Авторизация ( Authorization )
 
-    # Users ( Ученики / Лиды )
+    # Ученики / Лиды ( Users )
 
-    # Payments ( Платежи )
+    # Платежи ( Payments )
 
-    # Lessons ( Занятия )
+    # Занятия ( Lessons )
 
-    # Files ( Файлы )
+    # Файлы ( Files )
+
+    # Generic :
+
+    def get_(self, params=None):
+        """
+        Производит поиск  в соответствии с фильтром и возвращает их список
+
+        Searches for  according to the filter and returns list of them
+
+        :param params: query parameters ( фильтр поиска ) [ list of pairs ]
+        params fiels:
+        """
+        url = ""
+        return self.__request(method = 'GET', url=url, params=params)
+
+    def create_(self, _info : dict):
+        """
+
+         Функция возвращает  в формате JSON ( dict )
+
+        The function returns the  in JSON format (dict)
+
+        :param _info:
+        _info fields:
+
+        """
+        url = f""
+        resp = self.__request(method = 'POST', url=url, json=_info)
+        if (self.print_Flag):
+            print(" was created")
+        return resp
+
+    def get__info(self, Id):
+        """
+        Возвращает информацию о
+
+        Returns information about a
+
+        :param Id: ID
+        """
+        url = f""
+        return self.__request(method = 'GET', url=url)
+
+    def change_(self, Id, _info : dict):
+        """
+        Изменяет  и возвращает его обновленные данные в форме JSON ( dict ).
+
+
+        Modifies the  and returns its updated data in JSON (dict) form.
+
+        :param Id: ID
+        :param _info: Новые данные
+        payment_info fields:
+        """
+        url = f""
+        resp = self.__request(method = 'POST', url=url, json=_info)
+        if (self.print_Flag):
+            print(" was updated")
+        return resp
+
+    def delete_(self, Id):
+        """
+        Удаляет  из системы.
+
+        Removes the  from the system.
+
+        :param Id: ID
+        """
+        url = f""
+        self.__request(method='DELETE', url=url, void=True)
+        if (self.print_Flag):
+            print(" was deleted")
